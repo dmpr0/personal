@@ -12,9 +12,10 @@
             background-color: #f0fdf4;
             background-image: radial-gradient(#bbf7d0 2px, transparent 2px);
             background-size: 30px 30px;
-            /* Prevent text selection to feel more like an app */
+            /* Prevent text selection and scrolling to feel like an app */
             user-select: none; 
             -webkit-user-select: none;
+            touch-action: manipulation;
         }
 
         .card-pop {
@@ -22,12 +23,12 @@
         }
 
         .card-pop:active {
-            transform: scale(0.9);
+            transform: scale(0.95);
         }
 
         @keyframes bounce-in {
             0% { transform: scale(0); opacity: 0; }
-            60% { transform: scale(1.1); opacity: 1; }
+            60% { transform: scale(1.05); opacity: 1; }
             100% { transform: scale(1); opacity: 1; }
         }
 
@@ -37,7 +38,7 @@
         }
 
         .card-pop:hover .emoji-animate {
-            transform: scale(1.2) rotate(5deg);
+            transform: scale(1.1) rotate(5deg);
         }
 
         @keyframes sparkle {
@@ -56,12 +57,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center py-6 px-4">
-
-    <!-- Settings Button -->
-    <button id="settings-btn" class="fixed top-4 right-4 z-40 bg-white p-3 rounded-full shadow-lg border-2 border-green-200 hover:bg-green-50 text-2xl transition-transform hover:scale-110">
-        ⚙️
-    </button>
+<body class="h-[100dvh] w-screen overflow-hidden flex flex-col items-center">
 
     <!-- Settings Modal -->
     <div id="settings-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
@@ -91,145 +87,113 @@
         </div>
     </div>
 
-    <div class="max-w-4xl w-full pt-4">
+    <!-- 1. HOME SCREEN (Categories) -->
+    <div id="home-screen" class="w-full h-full flex flex-col items-center justify-center p-4 relative max-w-5xl mx-auto">
+        <!-- Settings Button -->
+        <button id="settings-btn" class="absolute top-4 right-4 md:top-6 md:right-6 bg-white p-3 rounded-full shadow-lg border-2 border-green-200 hover:bg-green-50 text-2xl transition-transform hover:scale-110 z-40">
+            ⚙️
+        </button>
+        
+        <h1 class="text-4xl md:text-5xl font-black text-green-600 mb-8 md:mb-12 text-center drop-shadow-sm">Обери гру</h1>
+        
+        <main id="category-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 w-full px-2">
+            <!-- Category buttons generated here -->
+        </main>
+    </div>
 
-        <!-- Category Navigation -->
-        <nav class="flex flex-wrap justify-center gap-4 mb-6" id="category-nav">
-            <!-- Buttons will be generated here -->
-        </nav>
+    <!-- 2. GAME SCREEN (Cards) -->
+    <div id="game-screen" class="hidden w-full h-full flex flex-col p-3 md:p-6 max-w-6xl mx-auto relative">
+        
+        <!-- Header (Back Button & Word) -->
+        <header class="relative flex items-center justify-between w-full h-16 md:h-20 shrink-0 mb-2 md:mb-4">
+            <button id="back-btn" class="z-10 bg-white px-4 md:px-6 py-2 md:py-3 rounded-2xl shadow-md border-2 border-gray-200 font-black text-gray-600 hover:bg-gray-50 active:scale-95 transition-transform text-lg md:text-xl">
+                ⬅️ Назад
+            </button>
+            
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <h2 id="current-word" class="text-3xl md:text-5xl font-black text-blue-500 opacity-0 transition-opacity duration-300 drop-shadow-sm leading-none mb-1">
+                    Word
+                </h2>
+                <p id="current-translation" class="text-base md:text-xl font-bold text-gray-500 opacity-0 transition-opacity duration-300">
+                    Переклад
+                </p>
+            </div>
+        </header>
 
-        <!-- Current Word Display -->
-        <div class="text-center mb-6 h-24 flex flex-col justify-center">
-            <h2 id="current-word" class="text-4xl md:text-5xl font-black text-blue-500 opacity-0 transition-opacity duration-300 drop-shadow-sm">
-                Word
-            </h2>
-            <p id="current-translation" class="text-xl md:text-2xl font-bold text-gray-500 opacity-0 transition-opacity duration-300 mt-1">
-                Переклад
-            </p>
-        </div>
-
-        <!-- Grid Container -->
-        <main id="game-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 pb-12">
+        <!-- Grid Container (Takes up remaining height entirely) -->
+        <!-- 3 cols/4 rows for portrait, 4 cols/3 rows for landscape (iPad) -->
+        <main id="game-grid" class="grid grid-cols-3 grid-rows-4 md:grid-cols-4 md:grid-rows-3 gap-2 md:gap-4 flex-1 min-h-0 w-full">
             <!-- Cards will be generated here -->
         </main>
         
     </div>
 
     <script>
-        // Data containing categories, emojis, English words, Belarusian words, and Ukrainian translations
         const gameData = {
             animals: {
-                id: 'animals',
-                title: '🐶 Тварини',
-                color: 'bg-yellow-400 hover:bg-yellow-500 text-yellow-900',
+                id: 'animals', title: '🐶 Тварини', color: 'bg-yellow-400 hover:bg-yellow-500 text-yellow-900 border-yellow-300',
                 items: [
-                    { emoji: '🐶', en: 'Dog', be: 'Сабака', uk: 'Собака' },
-                    { emoji: '🐱', en: 'Cat', be: 'Кот', uk: 'Кіт' },
-                    { emoji: '🐭', en: 'Mouse', be: 'Мыш', uk: 'Миша' },
-                    { emoji: '🐰', en: 'Rabbit', be: 'Трус', uk: 'Кролик' },
-                    { emoji: '🦊', en: 'Fox', be: 'Ліса', uk: 'Лисиця' },
-                    { emoji: '🐻', en: 'Bear', be: 'Мядзведзь', uk: 'Ведмідь' },
-                    { emoji: '🐼', en: 'Panda', be: 'Панда', uk: 'Панда' },
-                    { emoji: '🦁', en: 'Lion', be: 'Леў', uk: 'Лев' },
-                    { emoji: '🐮', en: 'Cow', be: 'Карова', uk: 'Корова' },
-                    { emoji: '🐷', en: 'Pig', be: 'Свіння', uk: 'Свиня' },
-                    { emoji: '🐸', en: 'Frog', be: 'Жаба', uk: 'Жаба' },
-                    { emoji: '🐵', en: 'Monkey', be: 'Малпа', uk: 'Мавпа' }
+                    { emoji: '🐶', en: 'Dog', be: 'Сабака', uk: 'Собака' }, { emoji: '🐱', en: 'Cat', be: 'Кот', uk: 'Кіт' },
+                    { emoji: '🐭', en: 'Mouse', be: 'Мыш', uk: 'Миша' }, { emoji: '🐰', en: 'Rabbit', be: 'Трус', uk: 'Кролик' },
+                    { emoji: '🦊', en: 'Fox', be: 'Ліса', uk: 'Лисиця' }, { emoji: '🐻', en: 'Bear', be: 'Мядзведзь', uk: 'Ведмідь' },
+                    { emoji: '🐼', en: 'Panda', be: 'Панда', uk: 'Панда' }, { emoji: '🦁', en: 'Lion', be: 'Леў', uk: 'Лев' },
+                    { emoji: '🐮', en: 'Cow', be: 'Карова', uk: 'Корова' }, { emoji: '🐷', en: 'Pig', be: 'Свіння', uk: 'Свиня' },
+                    { emoji: '🐸', en: 'Frog', be: 'Жаба', uk: 'Жаба' }, { emoji: '🐵', en: 'Monkey', be: 'Малпа', uk: 'Мавпа' }
                 ]
             },
             vegetables: {
-                id: 'vegetables',
-                title: '🥦 Овочі',
-                color: 'bg-green-400 hover:bg-green-500 text-green-900',
+                id: 'vegetables', title: '🥦 Овочі', color: 'bg-green-400 hover:bg-green-500 text-green-900 border-green-300',
                 items: [
-                    { emoji: '🥦', en: 'Broccoli', be: 'Брокалі', uk: 'Броколі' },
-                    { emoji: '🥕', en: 'Carrot', be: 'Морква', uk: 'Морква' },
-                    { emoji: '🌽', en: 'Corn', be: 'Кукуруза', uk: 'Кукурудза' },
-                    { emoji: '🍅', en: 'Tomato', be: 'Памідор', uk: 'Помідор' },
-                    { emoji: '🍆', en: 'Eggplant', be: 'Баклажан', uk: 'Баклажан' },
-                    { emoji: '🥔', en: 'Potato', be: 'Бульба', uk: 'Картопля' },
-                    { emoji: '🧅', en: 'Onion', be: 'Цыбуля', uk: 'Цибуля' },
-                    { emoji: '🧄', en: 'Garlic', be: 'Часнок', uk: 'Часник' },
-                    { emoji: '🥒', en: 'Cucumber', be: 'Агурок', uk: 'Огірок' },
-                    { emoji: '🌶️', en: 'Pepper', be: 'Перац', uk: 'Перець' },
-                    { emoji: '🥬', en: 'Lettuce', be: 'Салата', uk: 'Салат' },
-                    { emoji: '🍄', en: 'Mushroom', be: 'Грыб', uk: 'Гриб' }
+                    { emoji: '🥦', en: 'Broccoli', be: 'Брокалі', uk: 'Броколі' }, { emoji: '🥕', en: 'Carrot', be: 'Морква', uk: 'Морква' },
+                    { emoji: '🌽', en: 'Corn', be: 'Кукуруза', uk: 'Кукурудза' }, { emoji: '🍅', en: 'Tomato', be: 'Памідор', uk: 'Помідор' },
+                    { emoji: '🍆', en: 'Eggplant', be: 'Баклажан', uk: 'Баклажан' }, { emoji: '🥔', en: 'Potato', be: 'Бульба', uk: 'Картопля' },
+                    { emoji: '🧅', en: 'Onion', be: 'Цыбуля', uk: 'Цибуля' }, { emoji: '🧄', en: 'Garlic', be: 'Часнок', uk: 'Часник' },
+                    { emoji: '🥒', en: 'Cucumber', be: 'Агурок', uk: 'Огірок' }, { emoji: '🌶️', en: 'Pepper', be: 'Перац', uk: 'Перець' },
+                    { emoji: '🥬', en: 'Lettuce', be: 'Салата', uk: 'Салат' }, { emoji: '🍄', en: 'Mushroom', be: 'Грыб', uk: 'Гриб' }
                 ]
             },
             fruits: {
-                id: 'fruits',
-                title: '🍎 Фрукти',
-                color: 'bg-red-400 hover:bg-red-500 text-red-900',
+                id: 'fruits', title: '🍎 Фрукти', color: 'bg-red-400 hover:bg-red-500 text-red-900 border-red-300',
                 items: [
-                    { emoji: '🍎', en: 'Apple', be: 'Яблык', uk: 'Яблуко' },
-                    { emoji: '🍌', en: 'Banana', be: 'Банан', uk: 'Банан' },
-                    { emoji: '🍇', en: 'Grapes', be: 'Вінаград', uk: 'Виноград' },
-                    { emoji: '🍓', en: 'Strawberry', be: 'Трускаўка', uk: 'Полуниця' },
-                    { emoji: '🍉', en: 'Watermelon', be: 'Кавун', uk: 'Кавун' },
-                    { emoji: '🍊', en: 'Orange', be: 'Апельсін', uk: 'Апельсин' },
-                    { emoji: '🍋', en: 'Lemon', be: 'Лімон', uk: 'Лимон' },
-                    { emoji: '🍒', en: 'Cherry', be: 'Вішня', uk: 'Вишня' },
-                    { emoji: '🍑', en: 'Peach', be: 'Персік', uk: 'Персик' },
-                    { emoji: '🍍', en: 'Pineapple', be: 'Ананас', uk: 'Ананас' },
-                    { emoji: '🥭', en: 'Mango', be: 'Манга', uk: 'Манго' },
-                    { emoji: '🥥', en: 'Coconut', be: 'Какос', uk: 'Кокос' }
+                    { emoji: '🍎', en: 'Apple', be: 'Яблык', uk: 'Яблуко' }, { emoji: '🍌', en: 'Banana', be: 'Банан', uk: 'Банан' },
+                    { emoji: '🍇', en: 'Grapes', be: 'Вінаград', uk: 'Виноград' }, { emoji: '🍓', en: 'Strawberry', be: 'Трускаўка', uk: 'Полуниця' },
+                    { emoji: '🍉', en: 'Watermelon', be: 'Кавун', uk: 'Кавун' }, { emoji: '🍊', en: 'Orange', be: 'Апельсін', uk: 'Апельсин' },
+                    { emoji: '🍋', en: 'Lemon', be: 'Лімон', uk: 'Лимон' }, { emoji: '🍒', en: 'Cherry', be: 'Вішня', uk: 'Вишня' },
+                    { emoji: '🍑', en: 'Peach', be: 'Персік', uk: 'Персик' }, { emoji: '🍍', en: 'Pineapple', be: 'Ананас', uk: 'Ананас' },
+                    { emoji: '🥭', en: 'Mango', be: 'Манга', uk: 'Манго' }, { emoji: '🥥', en: 'Coconut', be: 'Какос', uk: 'Кокос' }
                 ]
             },
             toys: {
-                id: 'toys',
-                title: '🧸 Іграшки',
-                color: 'bg-purple-400 hover:bg-purple-500 text-purple-900',
+                id: 'toys', title: '🧸 Іграшки', color: 'bg-purple-400 hover:bg-purple-500 text-purple-900 border-purple-300',
                 items: [
-                    { emoji: '🧸', en: 'Teddy', be: 'Мішка', uk: 'Ведмедик' },
-                    { emoji: '⚽', en: 'Ball', be: 'Мяч', uk: 'М\'яч' },
-                    { emoji: '🚂', en: 'Train', be: 'Цягнік', uk: 'Потяг' },
-                    { emoji: '🎈', en: 'Balloon', be: 'Шарык', uk: 'Кулька' },
-                    { emoji: '🪁', en: 'Kite', be: 'Змей', uk: 'Змій' },
-                    { emoji: '🥁', en: 'Drum', be: 'Барабан', uk: 'Барабан' },
-                    { emoji: '🧩', en: 'Puzzle', be: 'Пазл', uk: 'Пазл' },
-                    { emoji: '🎲', en: 'Dice', be: 'Кубікі', uk: 'Кубики' },
-                    { emoji: '🪀', en: 'Yo-yo', be: 'Ё-ё', uk: 'Йо-йо' },
-                    { emoji: '🎺', en: 'Trumpet', be: 'Труба', uk: 'Труба' },
-                    { emoji: '🚀', en: 'Rocket', be: 'Ракета', uk: 'Ракета' },
-                    { emoji: '🤖', en: 'Robot', be: 'Робат', uk: 'Робот' }
+                    { emoji: '🧸', en: 'Teddy', be: 'Мішка', uk: 'Ведмедик' }, { emoji: '⚽', en: 'Ball', be: 'Мяч', uk: 'М\'яч' },
+                    { emoji: '🚂', en: 'Train', be: 'Цягнік', uk: 'Потяг' }, { emoji: '🎈', en: 'Balloon', be: 'Шарык', uk: 'Кулька' },
+                    { emoji: '🪁', en: 'Kite', be: 'Змей', uk: 'Змій' }, { emoji: '🥁', en: 'Drum', be: 'Барабан', uk: 'Барабан' },
+                    { emoji: '🧩', en: 'Puzzle', be: 'Пазл', uk: 'Пазл' }, { emoji: '🎲', en: 'Dice', be: 'Кубікі', uk: 'Кубики' },
+                    { emoji: '🪀', en: 'Yo-yo', be: 'Ё-ё', uk: 'Йо-йо' }, { emoji: '🎺', en: 'Trumpet', be: 'Труба', uk: 'Труба' },
+                    { emoji: '🚀', en: 'Rocket', be: 'Ракета', uk: 'Ракета' }, { emoji: '🤖', en: 'Robot', be: 'Робат', uk: 'Робот' }
                 ]
             },
             transport: {
-                id: 'transport',
-                title: '🚗 Транспорт',
-                color: 'bg-blue-400 hover:bg-blue-500 text-blue-900',
+                id: 'transport', title: '🚗 Транспорт', color: 'bg-blue-400 hover:bg-blue-500 text-blue-900 border-blue-300',
                 items: [
-                    { emoji: '🚗', en: 'Car', be: 'Машына', uk: 'Машина' },
-                    { emoji: '🚌', en: 'Bus', be: 'Аўтобус', uk: 'Автобус' },
-                    { emoji: '✈️', en: 'Plane', be: 'Самалёт', uk: 'Літак' },
-                    { emoji: '⛵', en: 'Boat', be: 'Лодка', uk: 'Човен' },
-                    { emoji: '🚲', en: 'Bicycle', be: 'Ровар', uk: 'Велосипед' },
-                    { emoji: '🚜', en: 'Tractor', be: 'Трактар', uk: 'Трактор' },
-                    { emoji: '🚑', en: 'Ambulance', be: 'Хуткая', uk: 'Швидка' },
-                    { emoji: '🚁', en: 'Helicopter', be: 'Верталёт', uk: 'Гелікоптер' },
-                    { emoji: '🚒', en: 'Firetruck', be: 'Пажарная', uk: 'Пожежна' },
-                    { emoji: '🚓', en: 'Police', be: 'Паліцыя', uk: 'Поліція' },
-                    { emoji: '🛵', en: 'Scooter', be: 'Скутар', uk: 'Скутер' },
-                    { emoji: '🛸', en: 'UFO', be: 'НЛА', uk: 'НЛО' }
+                    { emoji: '🚗', en: 'Car', be: 'Машына', uk: 'Машина' }, { emoji: '🚌', en: 'Bus', be: 'Аўтобус', uk: 'Автобус' },
+                    { emoji: '✈️', en: 'Plane', be: 'Самалёт', uk: 'Літак' }, { emoji: '⛵', en: 'Boat', be: 'Лодка', uk: 'Човен' },
+                    { emoji: '🚲', en: 'Bicycle', be: 'Ровар', uk: 'Велосипед' }, { emoji: '🚜', en: 'Tractor', be: 'Трактар', uk: 'Трактор' },
+                    { emoji: '🚑', en: 'Ambulance', be: 'Хуткая', uk: 'Швидка' }, { emoji: '🚁', en: 'Helicopter', be: 'Верталёт', uk: 'Гелікоптер' },
+                    { emoji: '🚒', en: 'Firetruck', be: 'Пажарная', uk: 'Пожежна' }, { emoji: '🚓', en: 'Police', be: 'Паліцыя', uk: 'Поліція' },
+                    { emoji: '🛵', en: 'Scooter', be: 'Скутар', uk: 'Скутер' }, { emoji: '🛸', en: 'UFO', be: 'НЛА', uk: 'НЛО' }
                 ]
             },
             clothes: {
-                id: 'clothes',
-                title: '👕 Одяг',
-                color: 'bg-pink-400 hover:bg-pink-500 text-pink-900',
+                id: 'clothes', title: '👕 Одяг', color: 'bg-pink-400 hover:bg-pink-500 text-pink-900 border-pink-300',
                 items: [
-                    { emoji: '👕', en: 'T-shirt', be: 'Майка', uk: 'Футболка' },
-                    { emoji: '👖', en: 'Pants', be: 'Штаны', uk: 'Штани' },
-                    { emoji: '👗', en: 'Dress', be: 'Сукенка', uk: 'Сукня' },
-                    { emoji: '🧦', en: 'Socks', be: 'Шкарпэткі', uk: 'Шкарпетки' },
-                    { emoji: '👟', en: 'Shoes', be: 'Абутак', uk: 'Взуття' },
-                    { emoji: '🧢', en: 'Hat', be: 'Шапка', uk: 'Шапка' },
-                    { emoji: '🧣', en: 'Scarf', be: 'Шалік', uk: 'Шарф' },
-                    { emoji: '🧤', en: 'Gloves', be: 'Пальчаткі', uk: 'Рукавички' },
-                    { emoji: '🧥', en: 'Coat', be: 'Паліто', uk: 'Пальто' },
-                    { emoji: '🩳', en: 'Shorts', be: 'Шорты', uk: 'Шорти' },
-                    { emoji: '🥾', en: 'Boots', be: 'Боты', uk: 'Чоботи' },
-                    { emoji: '👓', en: 'Glasses', be: 'Акуляры', uk: 'Окуляри' }
+                    { emoji: '👕', en: 'T-shirt', be: 'Майка', uk: 'Футболка' }, { emoji: '👖', en: 'Pants', be: 'Штаны', uk: 'Штани' },
+                    { emoji: '👗', en: 'Dress', be: 'Сукенка', uk: 'Сукня' }, { emoji: '🧦', en: 'Socks', be: 'Шкарпэткі', uk: 'Шкарпетки' },
+                    { emoji: '👟', en: 'Shoes', be: 'Абутак', uk: 'Взуття' }, { emoji: '🧢', en: 'Hat', be: 'Шапка', uk: 'Шапка' },
+                    { emoji: '🧣', en: 'Scarf', be: 'Шалік', uk: 'Шарф' }, { emoji: '🧤', en: 'Gloves', be: 'Пальчаткі', uk: 'Рукавички' },
+                    { emoji: '🧥', en: 'Coat', be: 'Паліто', uk: 'Пальто' }, { emoji: '🩳', en: 'Shorts', be: 'Шорты', uk: 'Шорти' },
+                    { emoji: '🥾', en: 'Boots', be: 'Боты', uk: 'Чоботи' }, { emoji: '👓', en: 'Glasses', be: 'Акуляры', uk: 'Окуляри' }
                 ]
             }
         };
@@ -238,7 +202,6 @@
         let targetLanguage = 'en';
         let availableVoices = [];
 
-        // Populate the voice dropdown based on selected language
         function populateVoiceList() {
             if (typeof speechSynthesis === 'undefined') return;
 
@@ -247,22 +210,16 @@
             
             if (availableVoices.length === 0) return;
 
-            // Filter voices by selected language
             let filteredVoices = [];
-            
             if (targetLanguage === 'be') {
-                // Для білоруської мови шукаємо білоруські, а також українські та російські голоси як альтернативу
                 filteredVoices = availableVoices.filter(voice => 
-                    voice.lang.startsWith('be') || 
-                    voice.lang.startsWith('uk') || 
-                    voice.lang.startsWith('ru')
+                    voice.lang.startsWith('be') || voice.lang.startsWith('uk') || voice.lang.startsWith('ru')
                 );
             } else {
                 filteredVoices = availableVoices.filter(voice => voice.lang.startsWith(targetLanguage));
             }
 
             const voicesToShow = filteredVoices.length > 0 ? filteredVoices : availableVoices;
-
             voiceSelect.innerHTML = ''; 
 
             voicesToShow.forEach((voice) => {
@@ -273,12 +230,10 @@
             });
         }
 
-        // Handle async voice loading in some browsers
         if (speechSynthesis.onvoiceschanged !== undefined) {
             speechSynthesis.onvoiceschanged = populateVoiceList;
         }
 
-        // Function to speak the word in the target language
         function speakWord(item) {
             window.speechSynthesis.cancel();
             
@@ -294,7 +249,6 @@
             
             if (selectedVoice) {
                 utterance.voice = selectedVoice;
-                // Встановлюємо мову відповідно до обраного голосу, щоб браузер правильно його застосував
                 utterance.lang = selectedVoice.lang;
             } else {
                 utterance.lang = targetLanguage === 'en' ? 'en-US' : 'be-BY';
@@ -303,16 +257,14 @@
             window.speechSynthesis.speak(utterance);
         }
 
-        // Function to display the word temporarily on screen
         function showWordText(item) {
             const wordElement = document.getElementById('current-word');
             const translationElement = document.getElementById('current-translation');
             
-            // Set colors based on selected language for visual distinction
             if (targetLanguage === 'en') {
-                wordElement.className = "text-4xl md:text-5xl font-black text-blue-500 transition-opacity duration-300 drop-shadow-sm";
+                wordElement.className = "text-3xl md:text-5xl font-black text-blue-500 transition-opacity duration-300 drop-shadow-sm mb-1 leading-none";
             } else {
-                wordElement.className = "text-4xl md:text-5xl font-black text-red-500 transition-opacity duration-300 drop-shadow-sm"; // Red for Belarusian
+                wordElement.className = "text-3xl md:text-5xl font-black text-red-500 transition-opacity duration-300 drop-shadow-sm mb-1 leading-none";
             }
 
             wordElement.textContent = item[targetLanguage];
@@ -321,25 +273,19 @@
             translationElement.textContent = item.uk;
             translationElement.style.opacity = 1;
 
-            // Clear previous timeout if exists
-            if (window.wordTimeout) {
-                clearTimeout(window.wordTimeout);
-            }
+            if (window.wordTimeout) clearTimeout(window.wordTimeout);
 
-            // Hide words after 2.5 seconds
             window.wordTimeout = setTimeout(() => {
                 wordElement.style.opacity = 0;
                 translationElement.style.opacity = 0;
             }, 2500);
         }
 
-        // Sparkle animation effect
         function createSparkles(e, card) {
             for (let i = 0; i < 3; i++) {
                 const sparkle = document.createElement('div');
                 sparkle.className = 'sparkle-effect';
                 
-                // Random position around the click
                 const rect = card.getBoundingClientRect();
                 const x = e.clientX - rect.left + (Math.random() * 40 - 20);
                 const y = e.clientY - rect.top + (Math.random() * 40 - 20);
@@ -348,43 +294,41 @@
                 sparkle.style.top = `${y}px`;
                 
                 card.appendChild(sparkle);
-                
-                // Cleanup
-                setTimeout(() => {
-                    sparkle.remove();
-                }, 600);
+                setTimeout(() => sparkle.remove(), 600);
             }
         }
 
-        // Render category buttons
-        function renderNavigation() {
-            const nav = document.getElementById('category-nav');
-            nav.innerHTML = '';
+        // Render Home Screen Categories
+        function renderHomeCategories() {
+            const grid = document.getElementById('category-grid');
+            grid.innerHTML = '';
 
             Object.values(gameData).forEach(cat => {
                 const btn = document.createElement('button');
-                const isSelected = currentCategory === cat.id;
+                btn.className = `${cat.color} rounded-3xl p-4 md:p-8 border-b-8 shadow-xl flex flex-col items-center justify-center gap-2 md:gap-4 transform hover:scale-105 active:scale-95 transition-transform`;
                 
-                let baseClass = 'px-6 py-3 rounded-2xl font-bold text-lg md:text-xl transition-all shadow-md transform hover:-translate-y-1';
+                // Extract emoji and text for beautiful display
+                const emoji = cat.title.split(' ')[0];
+                const text = cat.title.substring(2);
+
+                btn.innerHTML = `
+                    <span class="text-6xl md:text-8xl drop-shadow-md">${emoji}</span>
+                    <span class="text-xl md:text-3xl font-black tracking-wide">${text}</span>
+                `;
                 
-                if (isSelected) {
-                    btn.className = `${baseClass} ${cat.color} ring-4 ring-offset-2 ring-${cat.color.split('-')[1]}-400 scale-105`;
-                } else {
-                    btn.className = `${baseClass} bg-white text-gray-600 hover:bg-gray-50 border-2 border-gray-200`;
-                }
-                
-                btn.textContent = cat.title;
                 btn.onclick = () => {
                     currentCategory = cat.id;
-                    renderNavigation();
+                    document.getElementById('home-screen').classList.add('hidden');
+                    document.getElementById('game-screen').classList.remove('hidden');
+                    document.getElementById('game-screen').classList.add('flex');
                     renderGrid();
                 };
                 
-                nav.appendChild(btn);
+                grid.appendChild(btn);
             });
         }
 
-        // Render the grid of items
+        // Render Game Grid (Takes full height now)
         function renderGrid() {
             const gridContainer = document.getElementById('game-grid');
             gridContainer.innerHTML = '';
@@ -393,24 +337,25 @@
 
             items.forEach((item, index) => {
                 const card = document.createElement('button');
-                card.className = `card-pop relative overflow-hidden bg-white rounded-3xl border-4 border-white shadow-xl flex flex-col items-center justify-center p-3 md:p-6 aspect-square group`;
+                // Removed aspect-square, added w-full h-full to stretch into grid cells
+                card.className = `card-pop w-full h-full relative overflow-hidden bg-white rounded-2xl md:rounded-3xl border-4 border-white shadow-md flex flex-col items-center justify-center p-1 md:p-2 group`;
                 
-                // Set inline border color based on category for a fun look
-                let borderColor = '#fde047'; // yellow default
+                let borderColor = '#fde047'; 
                 if(currentCategory === 'vegetables') borderColor = '#86efac';
                 if(currentCategory === 'fruits') borderColor = '#fca5a5';
                 if(currentCategory === 'toys') borderColor = '#c084fc';
                 if(currentCategory === 'transport') borderColor = '#60a5fa';
                 if(currentCategory === 'clothes') borderColor = '#f472b6';
+                
                 card.style.borderColor = borderColor;
-                card.style.animation = `bounce-in 0.5s ease-out ${index * 0.05}s both`;
+                card.style.animation = `bounce-in 0.4s ease-out ${index * 0.04}s both`;
 
                 card.innerHTML = `
-                    <div class="absolute inset-0 opacity-0 group-hover:opacity-10 bg-black transition-opacity"></div>
-                    <span class="emoji-animate text-6xl md:text-7xl mb-2 md:mb-3">${item.emoji}</span>
+                    <div class="absolute inset-0 opacity-0 group-hover:opacity-5 bg-black transition-opacity"></div>
+                    <span class="emoji-animate text-5xl sm:text-6xl md:text-7xl mb-1">${item.emoji}</span>
                     <div class="flex flex-col items-center leading-tight w-full px-1">
-                        <span class="text-lg md:text-2xl font-black text-gray-800 capitalize truncate w-full text-center">${item[targetLanguage]}</span>
-                        <span class="text-sm md:text-base font-bold text-gray-400 mt-1">(${item.uk})</span>
+                        <span class="text-base sm:text-lg md:text-xl font-black text-gray-800 capitalize truncate w-full text-center">${item[targetLanguage]}</span>
+                        <span class="text-xs sm:text-sm md:text-base font-bold text-gray-400">(${item.uk})</span>
                     </div>
                 `;
 
@@ -424,13 +369,23 @@
             });
         }
 
-        // Initialize the game
+        // Navigation logic
+        document.getElementById('back-btn').onclick = () => {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('flex');
+            document.getElementById('home-screen').classList.remove('hidden');
+            document.getElementById('home-screen').classList.add('flex');
+            
+            // Clear floating text
+            document.getElementById('current-word').style.opacity = 0;
+            document.getElementById('current-translation').style.opacity = 0;
+        };
+
         window.onload = () => {
             window.speechSynthesis.getVoices();
             populateVoiceList();
             
-            renderNavigation();
-            renderGrid();
+            renderHomeCategories();
 
             // Settings Modal logic
             const modal = document.getElementById('settings-modal');
@@ -440,14 +395,9 @@
             // Language change logic
             document.getElementById('language-select').onchange = (e) => {
                 targetLanguage = e.target.value;
-                populateVoiceList(); // Refresh voice list for new language
-                renderGrid(); // Оновлюємо текст на картках для нової мови
-                
-                // Immediately update current word if visible
-                const wordElement = document.getElementById('current-word');
-                if(wordElement.style.opacity == 1) {
-                    wordElement.style.opacity = 0;
-                    document.getElementById('current-translation').style.opacity = 0;
+                populateVoiceList();
+                if (!document.getElementById('game-screen').classList.contains('hidden')) {
+                    renderGrid(); 
                 }
             };
         };
