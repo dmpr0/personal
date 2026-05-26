@@ -248,11 +248,17 @@
             if (availableVoices.length === 0) return;
 
             // Filter voices by selected language
-            let filteredVoices = availableVoices.filter(voice => voice.lang.startsWith(targetLanguage));
+            let filteredVoices = [];
             
-            // If Belarusian voices are missing (common on many devices), fallback to Russian voices to read Cyrillic
-            if (targetLanguage === 'be' && filteredVoices.length === 0) {
-                filteredVoices = availableVoices.filter(voice => voice.lang.startsWith('ru'));
+            if (targetLanguage === 'be') {
+                // Для білоруської мови шукаємо білоруські, а також українські та російські голоси як альтернативу
+                filteredVoices = availableVoices.filter(voice => 
+                    voice.lang.startsWith('be') || 
+                    voice.lang.startsWith('uk') || 
+                    voice.lang.startsWith('ru')
+                );
+            } else {
+                filteredVoices = availableVoices.filter(voice => voice.lang.startsWith(targetLanguage));
             }
 
             const voicesToShow = filteredVoices.length > 0 ? filteredVoices : availableVoices;
@@ -279,7 +285,6 @@
             const word = item[targetLanguage];
             const utterance = new SpeechSynthesisUtterance(word);
             
-            utterance.lang = targetLanguage === 'en' ? 'en-US' : 'be-BY';
             utterance.rate = 0.85; 
             utterance.pitch = 1.1;
 
@@ -289,6 +294,10 @@
             
             if (selectedVoice) {
                 utterance.voice = selectedVoice;
+                // Встановлюємо мову відповідно до обраного голосу, щоб браузер правильно його застосував
+                utterance.lang = selectedVoice.lang;
+            } else {
+                utterance.lang = targetLanguage === 'en' ? 'en-US' : 'be-BY';
             }
 
             window.speechSynthesis.speak(utterance);
@@ -384,7 +393,7 @@
 
             items.forEach((item, index) => {
                 const card = document.createElement('button');
-                card.className = `card-pop relative overflow-hidden bg-white rounded-3xl border-4 border-white shadow-xl flex flex-col items-center justify-center p-4 md:p-6 aspect-square group`;
+                card.className = `card-pop relative overflow-hidden bg-white rounded-3xl border-4 border-white shadow-xl flex flex-col items-center justify-center p-3 md:p-6 aspect-square group`;
                 
                 // Set inline border color based on category for a fun look
                 let borderColor = '#fde047'; // yellow default
@@ -398,8 +407,11 @@
 
                 card.innerHTML = `
                     <div class="absolute inset-0 opacity-0 group-hover:opacity-10 bg-black transition-opacity"></div>
-                    <span class="emoji-animate text-6xl md:text-8xl mb-2">${item.emoji}</span>
-                    <span class="text-lg md:text-xl font-bold text-gray-700 capitalize">${item.uk}</span>
+                    <span class="emoji-animate text-6xl md:text-7xl mb-2 md:mb-3">${item.emoji}</span>
+                    <div class="flex flex-col items-center leading-tight w-full px-1">
+                        <span class="text-lg md:text-2xl font-black text-gray-800 capitalize truncate w-full text-center">${item[targetLanguage]}</span>
+                        <span class="text-sm md:text-base font-bold text-gray-400 mt-1">(${item.uk})</span>
+                    </div>
                 `;
 
                 card.onclick = (e) => {
@@ -429,6 +441,7 @@
             document.getElementById('language-select').onchange = (e) => {
                 targetLanguage = e.target.value;
                 populateVoiceList(); // Refresh voice list for new language
+                renderGrid(); // Оновлюємо текст на картках для нової мови
                 
                 // Immediately update current word if visible
                 const wordElement = document.getElementById('current-word');
