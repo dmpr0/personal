@@ -66,6 +66,11 @@
             
             <div class="space-y-5">
                 <div>
+                    <label class="block text-gray-700 font-bold mb-2">👶 Ім'я дитини:</label>
+                    <input type="text" id="child-name-input" value="Мія" placeholder="Введіть ім'я..." class="w-full px-4 py-3 rounded-xl border-2 border-purple-200 bg-purple-50 text-gray-800 font-bold focus:outline-none focus:border-purple-500 shadow-inner">
+                </div>
+
+                <div>
                     <label class="block text-gray-700 font-bold mb-2">🌍 Мова вивчення:</label>
                     <select id="language-select" class="w-full px-4 py-3 rounded-xl border-2 border-blue-200 bg-blue-50 text-gray-800 font-bold focus:outline-none focus:border-blue-500 shadow-inner appearance-none cursor-pointer">
                         <option value="en">🇬🇧 Англійська</option>
@@ -94,7 +99,9 @@
             ⚙️
         </button>
         
-        <h1 class="text-4xl md:text-5xl font-black text-green-600 mb-8 md:mb-12 text-center drop-shadow-sm">Обери гру</h1>
+        <h1 class="text-4xl md:text-5xl font-black text-green-600 mb-8 md:mb-12 text-center drop-shadow-sm leading-tight">
+            Привіт, <span id="display-name">Мія</span>!<br>Обери гру
+        </h1>
         
         <main id="category-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 w-full px-2">
             <!-- Category buttons generated here -->
@@ -392,6 +399,13 @@
             document.getElementById('settings-btn').onclick = () => modal.classList.remove('hidden');
             document.getElementById('close-settings').onclick = () => modal.classList.add('hidden');
             
+            // Name change logic
+            const nameInput = document.getElementById('child-name-input');
+            const displayName = document.getElementById('display-name');
+            nameInput.addEventListener('input', (e) => {
+                displayName.textContent = e.target.value.trim() || 'Мія';
+            });
+
             // Language change logic
             document.getElementById('language-select').onchange = (e) => {
                 targetLanguage = e.target.value;
