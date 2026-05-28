@@ -12,17 +12,20 @@
             background-color: #f0fdf4;
             background-image: radial-gradient(#bbf7d0 2px, transparent 2px);
             background-size: 30px 30px;
+            /* Запобігаємо виділенню тексту та скролу */
             user-select: none; 
             -webkit-user-select: none;
             touch-action: manipulation;
         }
 
         .card-pop {
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: transform 0.1s ease-in-out, background-color 0.1s ease-in-out;
         }
 
-        .card-pop:active {
-            transform: scale(0.95);
+        /* Ефект спалаху при натисканні */
+        .card-active-flash {
+            transform: scale(0.92) !important;
+            background-color: #fef08a !important; /* Яскравий спалах */
         }
 
         @keyframes bounce-in {
@@ -58,6 +61,7 @@
 </head>
 <body class="h-[100dvh] w-screen overflow-hidden flex flex-col items-center">
 
+    <!-- Settings Modal -->
     <div id="settings-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border-4 border-green-400">
             <h2 class="text-2xl font-black text-green-600 mb-6 text-center">Налаштування</h2>
@@ -91,21 +95,26 @@
         </div>
     </div>
 
+    <!-- 1. HOME SCREEN (Categories) -->
     <div id="home-screen" class="w-full h-full flex flex-col items-center justify-center p-4 relative max-w-5xl mx-auto">
+        <!-- Settings Button -->
         <button id="settings-btn" class="absolute top-4 right-4 md:top-6 md:right-6 bg-white p-3 rounded-full shadow-lg border-2 border-green-200 hover:bg-green-50 text-2xl transition-transform hover:scale-110 z-40">
             ⚙️
         </button>
         
-        <h1 class="text-4xl md:text-5xl font-black text-green-600 mb-8 md:mb-12 text-center drop-shadow-sm leading-tight">
+        <h1 class="text-3xl md:text-5xl font-black text-green-600 mb-6 md:mb-10 text-center drop-shadow-sm leading-tight">
             Привіт, <span id="display-name">Мія</span>!<br>Обери гру
         </h1>
         
-        <main id="category-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 w-full px-2">
+        <main id="category-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 w-full px-2">
             <!-- Category buttons generated here -->
         </main>
     </div>
 
+    <!-- 2. GAME SCREEN (Cards) -->
     <div id="game-screen" class="hidden w-full h-full flex flex-col p-3 md:p-6 max-w-6xl mx-auto relative">
+        
+        <!-- Header (Back Button & Word) -->
         <header class="relative flex items-center justify-between w-full h-16 md:h-20 shrink-0 mb-2 md:mb-4">
             <button id="back-btn" class="z-10 bg-white px-4 md:px-6 py-2 md:py-3 rounded-2xl shadow-md border-2 border-gray-200 font-black text-gray-600 hover:bg-gray-50 active:scale-95 transition-transform text-lg md:text-xl">
                 ⬅️ Назад
@@ -121,66 +130,58 @@
             </div>
         </header>
 
-        <main id="game-grid" class="grid gap-2 md:gap-4 flex-1 min-h-0 w-full auto-rows-fr">
+        <!-- Grid Container (Takes up remaining height) -->
+        <main id="game-grid" class="flex-1 min-h-0 w-full">
             <!-- Cards will be generated here -->
         </main>
-        
-        <!-- NEW: Pagination Controls for Letters -->
-        <div id="pagination-controls" class="hidden flex items-center justify-between w-full h-16 shrink-0 mt-2">
-            <button id="prev-page-btn" class="bg-white px-6 py-3 rounded-2xl shadow-md border-2 border-gray-200 font-black text-gray-600 hover:bg-gray-50 active:scale-95 disabled:opacity-40 disabled:active:scale-100 transition-all text-2xl md:text-3xl">⬅️</button>
-            <div id="page-indicator" class="text-gray-500 font-black text-xl md:text-2xl">1 / 5</div>
-            <button id="next-page-btn" class="bg-white px-6 py-3 rounded-2xl shadow-md border-2 border-gray-200 font-black text-gray-600 hover:bg-gray-50 active:scale-95 disabled:opacity-40 disabled:active:scale-100 transition-all text-2xl md:text-3xl">➡️</button>
+
+        <!-- Pagination Controls -->
+        <div id="pagination-controls" class="hidden flex justify-center items-center gap-4 mt-4 h-14 shrink-0">
+            <button id="prev-page-btn" class="bg-white px-6 py-2 rounded-2xl shadow-md border-2 border-gray-200 hover:bg-gray-50 active:scale-95 text-2xl font-bold text-gray-600">
+                ⬅️
+            </button>
+            <span id="page-indicator" class="text-xl md:text-2xl font-black text-gray-500 w-24 text-center">
+                1 / 5
+            </span>
+            <button id="next-page-btn" class="bg-white px-6 py-2 rounded-2xl shadow-md border-2 border-gray-200 hover:bg-gray-50 active:scale-95 text-2xl font-bold text-gray-600">
+                ➡️
+            </button>
         </div>
+        
     </div>
 
     <script>
+        const ITEMS_PER_PAGE = 6; // Для літер
+        let currentLetterPage = 0;
+        let currentLettersWordsIndex = 0; // Для розділу Літера та слова
+
+        // Набір даних для нового розділу "Літери та слова"
+        const lettersWordsData = {
+            en: [
+                { letter: 'A', words: [{ emoji: '🍎', en: 'Apple', uk: 'Яблуко' }, { emoji: '🐜', en: 'Ant', uk: 'Мураха' }, { emoji: '🐊', en: 'Alligator', uk: 'Алігатор' }] },
+                { letter: 'B', words: [{ emoji: '🐻', en: 'Bear', uk: 'Ведмедик' }, { emoji: '⚽', en: 'Ball', uk: 'М\'яч' }, { emoji: '🍌', en: 'Banana', uk: 'Банан' }] },
+                { letter: 'C', words: [{ emoji: '🐱', en: 'Cat', uk: 'Кіт' }, { emoji: '🚗', en: 'Car', uk: 'Машина' }, { emoji: '🥕', en: 'Carrot', uk: 'Морква' }] },
+                { letter: 'D', words: [{ emoji: '🐶', en: 'Dog', uk: 'Собака' }, { emoji: '🥁', en: 'Drum', uk: 'Барабан' }, { emoji: '🦆', en: 'Duck', uk: 'Качка' }] },
+                { letter: 'E', words: [{ emoji: '🥚', en: 'Egg', uk: 'Яйце' }, { emoji: '🐘', en: 'Elephant', uk: 'Слон' }, { emoji: '🍆', en: 'Eggplant', uk: 'Баклажан' }] },
+                { letter: 'F', words: [{ emoji: '🦊', en: 'Fox', uk: 'Лисиця' }, { emoji: '🐸', en: 'Frog', uk: 'Жаба' }, { emoji: '🐟', en: 'Fish', uk: 'Риба' }] }
+            ],
+            uk: [
+                { letter: 'А', words: [{ emoji: '🍍', uk: 'Ананас', en: 'Pineapple' }, { emoji: '🚌', uk: 'Автобус', en: 'Bus' }, { emoji: '🦈', uk: 'Акула', en: 'Shark' }] },
+                { letter: 'Б', words: [{ emoji: '🍌', uk: 'Банан', en: 'Banana' }, { emoji: '🥁', uk: 'Барабан', en: 'Drum' }, { emoji: '🍆', uk: 'Баклажан', en: 'Eggplant' }] },
+                { letter: 'В', words: [{ emoji: '🐻', uk: 'Ведмідь', en: 'Bear' }, { emoji: '🚲', uk: 'Велосипед', en: 'Bicycle' }, { emoji: '🍒', uk: 'Вишня', en: 'Cherry' }] },
+                { letter: 'К', words: [{ emoji: '🐱', uk: 'Кіт', en: 'Cat' }, { emoji: '🐰', uk: 'Кролик', en: 'Rabbit' }, { emoji: '🐮', uk: 'Корова', en: 'Cow' }] },
+                { letter: 'М', words: [{ emoji: '🐵', uk: 'Мавпа', en: 'Monkey' }, { emoji: '🚗', uk: 'Машина', en: 'Car' }, { emoji: '🥕', uk: 'Морква', en: 'Carrot' }] }
+            ],
+            be: [
+                { letter: 'А', words: [{ emoji: '🍍', be: 'Ананас', uk: 'Ананас' }, { emoji: '🥒', be: 'Агурок', uk: 'Огірок' }, { emoji: '🚌', be: 'Аўтобус', uk: 'Автобус' }] },
+                { letter: 'Б', words: [{ emoji: '🍌', be: 'Банан', uk: 'Банан' }, { emoji: '🥔', be: 'Бульба', uk: 'Картопля' }, { emoji: '🥁', be: 'Барабан', uk: 'Барабан' }] },
+                { letter: 'В', words: [{ emoji: '🍇', be: 'Вінаград', uk: 'Виноград' }, { emoji: '🍒', be: 'Вішня', uk: 'Вишня' }, { emoji: '🚁', be: 'Верталёт', uk: 'Гелікоптер' }] },
+                { letter: 'К', words: [{ emoji: '🐱', be: 'Кот', uk: 'Кіт' }, { emoji: '🐮', be: 'Карова', uk: 'Корова' }, { emoji: '🍉', be: 'Кавун', uk: 'Кавун' }] },
+                { letter: 'М', words: [{ emoji: '🐵', be: 'Малпа', uk: 'Мавпа' }, { emoji: '🚗', be: 'Машына', uk: 'Машина' }, { emoji: '🧸', be: 'Мішка', uk: 'Ведмедик' }] }
+            ]
+        };
+
         const gameData = {
-            letters: {
-                id: 'letters', title: '🔤 Літери', color: 'bg-orange-400 hover:bg-orange-500 text-orange-900 border-orange-300',
-                getItems: function(lang) {
-                    if (lang === 'en') {
-                        return [
-                            { emoji: 'A', en: 'A', uk: 'Ей' }, { emoji: 'B', en: 'B', uk: 'Бі' }, { emoji: 'C', en: 'C', uk: 'Сі' },
-                            { emoji: 'D', en: 'D', uk: 'Ді' }, { emoji: 'E', en: 'E', uk: 'І' }, { emoji: 'F', en: 'F', uk: 'Еф' },
-                            { emoji: 'G', en: 'G', uk: 'Джі' }, { emoji: 'H', en: 'H', uk: 'Ейч' }, { emoji: 'I', en: 'I', uk: 'Ай' },
-                            { emoji: 'J', en: 'J', uk: 'Джей' }, { emoji: 'K', en: 'K', uk: 'Кей' }, { emoji: 'L', en: 'L', uk: 'Ел' },
-                            { emoji: 'M', en: 'M', uk: 'Ем' }, { emoji: 'N', en: 'N', uk: 'Ен' }, { emoji: 'O', en: 'O', uk: 'Оу' },
-                            { emoji: 'P', en: 'P', uk: 'Пі' }, { emoji: 'Q', en: 'Q', uk: 'Кью' }, { emoji: 'R', en: 'R', uk: 'Ар' },
-                            { emoji: 'S', en: 'S', uk: 'Ес' }, { emoji: 'T', en: 'T', uk: 'Ті' }, { emoji: 'U', en: 'U', uk: 'Ю' },
-                            { emoji: 'V', en: 'V', uk: 'Ві' }, { emoji: 'W', en: 'W', uk: 'Дабл-ю' }, { emoji: 'X', en: 'X', uk: 'Екс' },
-                            { emoji: 'Y', en: 'Y', uk: 'Вай' }, { emoji: 'Z', en: 'Z', uk: 'Зет' }
-                        ];
-                    } else if (lang === 'uk') {
-                        return [
-                            { emoji: 'А', uk: 'А', en: 'A' }, { emoji: 'Б', uk: 'Бе', en: 'B' }, { emoji: 'В', uk: 'Ве', en: 'V' },
-                            { emoji: 'Г', uk: 'Ге', en: 'H' }, { emoji: 'Ґ', uk: 'Ґе', en: 'G' }, { emoji: 'Д', uk: 'Де', en: 'D' },
-                            { emoji: 'Е', uk: 'Е', en: 'E' }, { emoji: 'Є', uk: 'Є', en: 'Ye' }, { emoji: 'Ж', uk: 'Же', en: 'Zh' },
-                            { emoji: 'З', uk: 'Зе', en: 'Z' }, { emoji: 'И', uk: 'И', en: 'Y' }, { emoji: 'І', uk: 'І', en: 'I' },
-                            { emoji: 'Ї', uk: 'Ї', en: 'Yi' }, { emoji: 'Й', uk: 'Йот', en: 'Yot' }, { emoji: 'К', uk: 'Ка', en: 'K' },
-                            { emoji: 'Л', uk: 'Ел', en: 'L' }, { emoji: 'М', uk: 'Ем', en: 'M' }, { emoji: 'Н', uk: 'Ен', en: 'N' },
-                            { emoji: 'О', uk: 'О', en: 'O' }, { emoji: 'П', uk: 'Пе', en: 'P' }, { emoji: 'Р', uk: 'Ер', en: 'R' },
-                            { emoji: 'С', uk: 'Ес', en: 'S' }, { emoji: 'Т', uk: 'Те', en: 'T' }, { emoji: 'У', uk: 'У', en: 'U' },
-                            { emoji: 'Ф', uk: 'Еф', en: 'F' }, { emoji: 'Х', uk: 'Ха', en: 'Kh' }, { emoji: 'Ц', uk: 'Це', en: 'Ts' },
-                            { emoji: 'Ч', uk: 'Че', en: 'Ch' }, { emoji: 'Ш', uk: 'Ша', en: 'Sh' }, { emoji: 'Щ', uk: 'Ща', en: 'Shch' },
-                            { emoji: 'Ь', uk: 'М\'який знак', en: 'Soft sign' }, { emoji: 'Ю', uk: 'Ю', en: 'Yu' }, { emoji: 'Я', uk: 'Я', en: 'Ya' }
-                        ];
-                    } else {
-                        return [
-                            { emoji: 'А', be: 'А', uk: 'А' }, { emoji: 'Б', be: 'Б', uk: 'Бе' }, { emoji: 'В', be: 'В', uk: 'Ве' },
-                            { emoji: 'Г', be: 'Г', uk: 'Ге' }, { emoji: 'Д', be: 'Д', uk: 'Де' }, { emoji: 'Е', be: 'Е', uk: 'Є' },
-                            { emoji: 'Ё', be: 'Ё', uk: 'Йо' }, { emoji: 'Ж', be: 'Ж', uk: 'Же' }, { emoji: 'З', be: 'З', uk: 'Зе' },
-                            { emoji: 'І', be: 'І', uk: 'І' }, { emoji: 'Й', be: 'Й', uk: 'Йот' }, { emoji: 'К', be: 'К', uk: 'Ка' },
-                            { emoji: 'Л', be: 'Л', uk: 'Ел' }, { emoji: 'М', be: 'М', uk: 'Ем' }, { emoji: 'Н', be: 'Н', uk: 'Ен' },
-                            { emoji: 'О', be: 'О', uk: 'О' }, { emoji: 'П', be: 'П', uk: 'Пе' }, { emoji: 'Р', be: 'Р', uk: 'Ер' },
-                            { emoji: 'С', be: 'С', uk: 'Ес' }, { emoji: 'Т', be: 'Т', uk: 'Те' }, { emoji: 'У', be: 'У', uk: 'У' },
-                            { emoji: 'Ў', be: 'Ў', uk: 'У-коротке' }, { emoji: 'Ф', be: 'Ф', uk: 'Еф' }, { emoji: 'Х', be: 'Х', uk: 'Ха' },
-                            { emoji: 'Ц', be: 'Ц', uk: 'Це' }, { emoji: 'Ч', be: 'Ч', uk: 'Че' }, { emoji: 'Ш', be: 'Ш', uk: 'Ша' },
-                            { emoji: 'Ы', be: 'Ы', uk: 'И' }, { emoji: 'Ь', be: 'Ь', uk: 'М\'який знак' }, { emoji: 'Э', be: 'Э', uk: 'Е' },
-                            { emoji: 'Ю', be: 'Ю', uk: 'Ю' }, { emoji: 'Я', be: 'Я', uk: 'Я' }
-                        ];
-                    }
-                }
-            },
             animals: {
                 id: 'animals', title: '🐶 Тварини', color: 'bg-yellow-400 hover:bg-yellow-500 text-yellow-900 border-yellow-300',
                 items: [
@@ -246,14 +247,34 @@
                     { emoji: '🧥', en: 'Coat', be: 'Паліто', uk: 'Пальто' }, { emoji: '🩳', en: 'Shorts', be: 'Шорты', uk: 'Шорти' },
                     { emoji: '🥾', en: 'Boots', be: 'Боты', uk: 'Чоботи' }, { emoji: '👓', en: 'Glasses', be: 'Акуляры', uk: 'Окуляри' }
                 ]
+            },
+            letters: {
+                id: 'letters', title: '🔤 Літери', color: 'bg-orange-400 hover:bg-orange-500 text-orange-900 border-orange-300',
+                getItems: function(lang) {
+                    if (lang === 'en') {
+                        return [
+                            { emoji: 'A', en: 'A' }, { emoji: 'B', en: 'B' }, { emoji: 'C', en: 'C' }, { emoji: 'D', en: 'D' }, { emoji: 'E', en: 'E' }, { emoji: 'F', en: 'F' }, { emoji: 'G', en: 'G' }, { emoji: 'H', en: 'H' }, { emoji: 'I', en: 'I' }, { emoji: 'J', en: 'J' }, { emoji: 'K', en: 'K' }, { emoji: 'L', en: 'L' }, { emoji: 'M', en: 'M' }, { emoji: 'N', en: 'N' }, { emoji: 'O', en: 'O' }, { emoji: 'P', en: 'P' }, { emoji: 'Q', en: 'Q' }, { emoji: 'R', en: 'R' }, { emoji: 'S', en: 'S' }, { emoji: 'T', en: 'T' }, { emoji: 'U', en: 'U' }, { emoji: 'V', en: 'V' }, { emoji: 'W', en: 'W' }, { emoji: 'X', en: 'X' }, { emoji: 'Y', en: 'Y' }, { emoji: 'Z', en: 'Z' }
+                        ];
+                    } else if (lang === 'uk') {
+                        return [
+                            { emoji: 'А', uk: 'А' }, { emoji: 'Б', uk: 'Б' }, { emoji: 'В', uk: 'В' }, { emoji: 'Г', uk: 'Г' }, { emoji: 'Ґ', uk: 'Ґ' }, { emoji: 'Д', uk: 'Д' }, { emoji: 'Е', uk: 'Е' }, { emoji: 'Є', uk: 'Є' }, { emoji: 'Ж', uk: 'Ж' }, { emoji: 'З', uk: 'З' }, { emoji: 'И', uk: 'И' }, { emoji: 'І', uk: 'І' }, { emoji: 'Ї', uk: 'Ї' }, { emoji: 'Й', uk: 'Й' }, { emoji: 'К', uk: 'К' }, { emoji: 'Л', uk: 'Л' }, { emoji: 'М', uk: 'М' }, { emoji: 'Н', uk: 'Н' }, { emoji: 'О', uk: 'О' }, { emoji: 'П', uk: 'П' }, { emoji: 'Р', uk: 'Р' }, { emoji: 'С', uk: 'С' }, { emoji: 'Т', uk: 'Т' }, { emoji: 'У', uk: 'У' }, { emoji: 'Ф', uk: 'Ф' }, { emoji: 'Х', uk: 'Х' }, { emoji: 'Ц', uk: 'Ц' }, { emoji: 'Ч', uk: 'Ч' }, { emoji: 'Ш', uk: 'Ш' }, { emoji: 'Щ', uk: 'Щ' }, { emoji: 'Ь', uk: 'Ь' }, { emoji: 'Ю', uk: 'Ю' }, { emoji: 'Я', uk: 'Я' }
+                        ];
+                    } else { // Belarusian
+                        return [
+                            { emoji: 'А', be: 'А' }, { emoji: 'Б', be: 'Б' }, { emoji: 'В', be: 'В' }, { emoji: 'Г', be: 'Г' }, { emoji: 'Д', be: 'Д' }, { emoji: 'Е', be: 'Е' }, { emoji: 'Ё', be: 'Ё' }, { emoji: 'Ж', be: 'Ж' }, { emoji: 'З', be: 'З' }, { emoji: 'І', be: 'І' }, { emoji: 'Й', be: 'Й' }, { emoji: 'К', be: 'К' }, { emoji: 'Л', be: 'Л' }, { emoji: 'М', be: 'М' }, { emoji: 'Н', be: 'Н' }, { emoji: 'О', be: 'О' }, { emoji: 'П', be: 'П' }, { emoji: 'Р', be: 'Р' }, { emoji: 'С', be: 'С' }, { emoji: 'Т', be: 'Т' }, { emoji: 'У', be: 'У' }, { emoji: 'Ў', be: 'Ў' }, { emoji: 'Ф', be: 'Ф' }, { emoji: 'Х', be: 'Х' }, { emoji: 'Ц', be: 'Ц' }, { emoji: 'Ч', be: 'Ч' }, { emoji: 'Ш', be: 'Ш' }, { emoji: 'Ы', be: 'Ы' }, { emoji: 'Ь', be: 'Ь' }, { emoji: 'Э', be: 'Э' }, { emoji: 'Ю', be: 'Ю' }, { emoji: 'Я', be: 'Я' }
+                        ];
+                    }
+                }
+            },
+            letters_words: {
+                id: 'letters_words', title: '🔤📖 Буква і слово', color: 'bg-teal-400 hover:bg-teal-500 text-teal-900 border-teal-300',
+                items: [] // Обробляється динамічно з lettersWordsData
             }
         };
 
-        let currentCategory = 'letters'; // Default to letters for testing
+        let currentCategory = 'animals';
         let targetLanguage = 'en';
         let availableVoices = [];
-        let currentLetterPage = 0; 
-        const ITEMS_PER_PAGE = 6; 
 
         function populateVoiceList() {
             if (typeof speechSynthesis === 'undefined') return;
@@ -264,13 +285,9 @@
             if (availableVoices.length === 0) return;
 
             let filteredVoices = [];
-            if (targetLanguage === 'be') {
+            if (targetLanguage === 'be' || targetLanguage === 'uk') {
                 filteredVoices = availableVoices.filter(voice => 
-                    voice.lang.startsWith('be') || voice.lang.startsWith('uk') || voice.lang.startsWith('ru')
-                );
-            } else if (targetLanguage === 'uk') {
-                filteredVoices = availableVoices.filter(voice => 
-                    voice.lang.startsWith('uk')
+                    voice.lang.startsWith('uk') || voice.lang.startsWith('be') || voice.lang.startsWith('ru')
                 );
             } else {
                 filteredVoices = availableVoices.filter(voice => voice.lang.startsWith(targetLanguage));
@@ -294,14 +311,9 @@
         function speakWord(item) {
             window.speechSynthesis.cancel();
             
-            let textToSpeak = item[targetLanguage];
-            
-            // Fix for ALL letters so it says the letter instead of "Capital/Велика літера"
-            if (currentCategory === 'letters') {
-                textToSpeak = textToSpeak.toLowerCase(); 
-            }
-
-            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            // Запобігаємо тому, щоб TTS казав "Capital A" або "Велика літера О" - перетворюємо все в нижній регістр
+            const wordToSpeak = (item[targetLanguage] || '').toLowerCase();
+            const utterance = new SpeechSynthesisUtterance(wordToSpeak);
             
             utterance.rate = 0.85; 
             utterance.pitch = 1.1;
@@ -314,7 +326,9 @@
                 utterance.voice = selectedVoice;
                 utterance.lang = selectedVoice.lang;
             } else {
-                utterance.lang = targetLanguage === 'en' ? 'en-US' : (targetLanguage === 'uk' ? 'uk-UA' : 'be-BY');
+                if (targetLanguage === 'en') utterance.lang = 'en-US';
+                else if (targetLanguage === 'uk') utterance.lang = 'uk-UA';
+                else utterance.lang = 'be-BY';
             }
 
             window.speechSynthesis.speak(utterance);
@@ -324,21 +338,21 @@
             const wordElement = document.getElementById('current-word');
             const translationElement = document.getElementById('current-translation');
             
-            if (targetLanguage === 'en') {
-                wordElement.className = "text-3xl md:text-5xl font-black text-blue-500 transition-opacity duration-300 drop-shadow-sm mb-1 leading-none";
-            } else if (targetLanguage === 'uk') {
-                wordElement.className = "text-3xl md:text-5xl font-black text-yellow-500 transition-opacity duration-300 drop-shadow-sm mb-1 leading-none";
-            } else {
-                wordElement.className = "text-3xl md:text-5xl font-black text-red-500 transition-opacity duration-300 drop-shadow-sm mb-1 leading-none";
-            }
+            wordElement.className = `text-3xl md:text-5xl font-black transition-opacity duration-300 drop-shadow-sm mb-1 leading-none ${targetLanguage === 'en' ? 'text-blue-500' : 'text-red-500'}`;
 
             wordElement.textContent = item[targetLanguage];
             wordElement.style.opacity = 1;
             
-            // If learning Ukrainian, show English in brackets instead of Ukrainian
-            const secondaryText = targetLanguage === 'uk' ? item.en : item.uk;
-            translationElement.textContent = secondaryText;
-            translationElement.style.opacity = 1;
+            // Розумне відображення перекладу
+            if (item.uk && targetLanguage !== 'uk') {
+                translationElement.textContent = targetLanguage === 'en' ? item.uk : item.en;
+                translationElement.style.opacity = 1;
+            } else if (targetLanguage === 'uk' && item.en) {
+                translationElement.textContent = item.en;
+                translationElement.style.opacity = 1;
+            } else {
+                translationElement.style.opacity = 0;
+            }
 
             if (window.wordTimeout) clearTimeout(window.wordTimeout);
 
@@ -356,7 +370,6 @@
                 const rect = card.getBoundingClientRect();
                 let x, y;
                 
-                // Якщо є подія миші/дотику - іскри з'являються під пальцем, інакше (клавіатура) - по центру картки
                 if (e && e.clientX) {
                     x = e.clientX - rect.left + (Math.random() * 40 - 20);
                     y = e.clientY - rect.top + (Math.random() * 40 - 20);
@@ -379,19 +392,20 @@
 
             Object.values(gameData).forEach(cat => {
                 const btn = document.createElement('button');
-                btn.className = `${cat.color} rounded-3xl p-4 md:p-8 border-b-8 shadow-xl flex flex-col items-center justify-center gap-2 md:gap-4 transform hover:scale-105 active:scale-95 transition-transform`;
+                btn.className = `${cat.color} rounded-3xl p-3 md:p-6 border-b-8 shadow-xl flex flex-col items-center justify-center gap-1 md:gap-3 transform hover:scale-105 active:scale-95 transition-transform`;
                 
                 const emoji = cat.title.split(' ')[0];
                 const text = cat.title.substring(2);
 
                 btn.innerHTML = `
-                    <span class="text-6xl md:text-8xl drop-shadow-md">${emoji}</span>
-                    <span class="text-xl md:text-3xl font-black tracking-wide">${text}</span>
+                    <span class="text-5xl md:text-7xl drop-shadow-md">${emoji}</span>
+                    <span class="text-base md:text-xl font-black tracking-wide leading-tight">${text}</span>
                 `;
                 
                 btn.onclick = () => {
                     currentCategory = cat.id;
                     currentLetterPage = 0; 
+                    currentLettersWordsIndex = 0;
                     document.getElementById('home-screen').classList.add('hidden');
                     document.getElementById('game-screen').classList.remove('hidden');
                     document.getElementById('game-screen').classList.add('flex');
@@ -402,40 +416,114 @@
             });
         }
 
-        function renderGrid() {
+        function renderLettersWords() {
             const gridContainer = document.getElementById('game-grid');
+            const paginationControls = document.getElementById('pagination-controls');
+            gridContainer.innerHTML = '';
+            
+            const langData = lettersWordsData[targetLanguage] || lettersWordsData['en'];
+            const currentItem = langData[currentLettersWordsIndex];
+
+            // Налаштовуємо пагінацію
+            paginationControls.classList.remove('hidden');
+            document.getElementById('page-indicator').textContent = `${currentLettersWordsIndex + 1} / ${langData.length}`;
+            document.getElementById('prev-page-btn').style.opacity = currentLettersWordsIndex === 0 ? '0.3' : '1';
+            document.getElementById('next-page-btn').style.opacity = currentLettersWordsIndex >= langData.length - 1 ? '0.3' : '1';
+
+            // Основна сітка: Ліва велика літера і три картки справа
+            gridContainer.className = "grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0 w-full";
+
+            // Ліва частина - Велика літера
+            const leftCard = document.createElement('button');
+            leftCard.className = "card-pop left-giant-card w-full h-full relative overflow-hidden bg-white rounded-3xl border-8 border-teal-400 shadow-lg flex flex-col items-center justify-center p-6";
+            leftCard.innerHTML = `
+                <span class="text-9xl md:text-[12rem] font-black text-teal-500 drop-shadow-md">${currentItem.letter}</span>
+                <span class="text-lg md:text-2xl font-bold text-gray-400 mt-2">Натисни букву</span>
+            `;
+            leftCard.onclick = (e) => {
+                leftCard.classList.add('card-active-flash');
+                setTimeout(() => leftCard.classList.remove('card-active-flash'), 150);
+
+                speakWord({ [targetLanguage]: currentItem.letter });
+                showWordText({ [targetLanguage]: currentItem.letter, uk: 'Буква' });
+                createSparkles(e, leftCard);
+            };
+
+            // Права частина - Три картки зі словами в стовпчик
+            const rightContainer = document.createElement('div');
+            rightContainer.className = "flex flex-col gap-3 justify-between h-full w-full";
+
+            currentItem.words.forEach((wordObj, idx) => {
+                const wordCard = document.createElement('button');
+                wordCard.className = "card-pop w-full flex-1 relative overflow-hidden bg-white rounded-2xl border-4 border-teal-300 shadow-md flex items-center justify-start p-4 gap-6 group";
+                
+                // Перевіряємо мову інтерфейсу, щоб показати правильні підписи
+                const mainWord = wordObj[targetLanguage] || wordObj.en;
+                const subWord = targetLanguage === 'uk' ? wordObj.en : wordObj.uk;
+
+                wordCard.innerHTML = `
+                    <div class="absolute inset-0 opacity-0 group-hover:opacity-5 bg-black transition-opacity"></div>
+                    <span class="emoji-animate text-5xl md:text-6xl">${wordObj.emoji}</span>
+                    <div class="flex flex-col items-start leading-tight">
+                        <span class="text-xl md:text-3xl font-black text-gray-800 capitalize">${mainWord}</span>
+                        <span class="text-sm md:text-lg font-bold text-gray-400 mt-1">(${subWord})</span>
+                    </div>
+                `;
+
+                wordCard.onclick = (e) => {
+                    wordCard.classList.add('card-active-flash');
+                    setTimeout(() => wordCard.classList.remove('card-active-flash'), 150);
+
+                    speakWord(wordObj);
+                    showWordText(wordObj);
+                    createSparkles(e, wordCard);
+                };
+
+                rightContainer.appendChild(wordCard);
+            });
+
+            gridContainer.appendChild(leftCard);
+            gridContainer.appendChild(rightContainer);
+        }
+
+        function renderGrid() {
+            if (currentCategory === 'letters_words') {
+                renderLettersWords();
+                return;
+            }
+
+            const gridContainer = document.getElementById('game-grid');
+            const paginationControls = document.getElementById('pagination-controls');
             gridContainer.innerHTML = '';
             
             const categoryData = gameData[currentCategory];
-            const allItems = categoryData.getItems ? categoryData.getItems(targetLanguage) : categoryData.items;
+            let allItems = categoryData.getItems ? categoryData.getItems(targetLanguage) : categoryData.items;
 
-            let itemsToRender = allItems;
-            let gridClass = "grid gap-2 md:gap-4 flex-1 min-h-0 w-full auto-rows-fr ";
-            
-            const paginationControls = document.getElementById('pagination-controls');
+            let displayItems = allItems;
 
-            // Handle Pagination for letters
             if (currentCategory === 'letters') {
-                const totalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
-                itemsToRender = allItems.slice(currentLetterPage * ITEMS_PER_PAGE, (currentLetterPage + 1) * ITEMS_PER_PAGE);
-                
-                // 2x3 or 3x2 grid for 6 large items
-                gridClass += "grid-cols-2 grid-rows-3 md:grid-cols-3 md:grid-rows-2";
+                const startIndex = currentLetterPage * ITEMS_PER_PAGE;
+                displayItems = allItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
                 
                 paginationControls.classList.remove('hidden');
-                document.getElementById('page-indicator').textContent = `${currentLetterPage + 1} / ${totalPages}`;
-                document.getElementById('prev-page-btn').disabled = currentLetterPage === 0;
-                document.getElementById('next-page-btn').disabled = currentLetterPage >= totalPages - 1;
+                document.getElementById('page-indicator').textContent = `${currentLetterPage + 1} / ${Math.ceil(allItems.length / ITEMS_PER_PAGE)}`;
+                
+                document.getElementById('prev-page-btn').style.opacity = currentLetterPage === 0 ? '0.3' : '1';
+                document.getElementById('next-page-btn').style.opacity = currentLetterPage >= Math.ceil(allItems.length / ITEMS_PER_PAGE) - 1 ? '0.3' : '1';
             } else {
-                gridClass += "grid-cols-3 grid-rows-4 md:grid-cols-4 md:grid-rows-3"; // 12 items standard
                 paginationControls.classList.add('hidden');
             }
-            
-            gridContainer.className = gridClass;
 
-            itemsToRender.forEach((item, index) => {
+            // Класи сітки
+            if (currentCategory === 'letters') {
+                gridContainer.className = "grid grid-cols-3 grid-rows-2 gap-3 md:gap-6 flex-1 min-h-0 w-full";
+            } else {
+                gridContainer.className = "grid grid-cols-3 grid-rows-4 md:grid-cols-4 md:grid-rows-3 gap-2 md:gap-4 flex-1 min-h-0 w-full";
+            }
+
+            displayItems.forEach((item, index) => {
                 const card = document.createElement('button');
-                card.className = `card-pop w-full h-full relative overflow-hidden bg-white rounded-2xl md:rounded-3xl border-4 border-white shadow-md flex flex-col items-center justify-center p-1 md:p-3 group`;
+                card.className = `card-pop w-full h-full relative overflow-hidden bg-white rounded-2xl md:rounded-3xl border-4 border-white shadow-md flex flex-col items-center justify-center p-1 group`;
                 
                 let borderColor = '#fde047'; 
                 if(currentCategory === 'vegetables') borderColor = '#86efac';
@@ -448,30 +536,24 @@
                 card.style.borderColor = borderColor;
                 card.style.animation = `bounce-in 0.4s ease-out ${index * 0.05}s both`;
 
-                // If learning Ukrainian, show English in brackets instead of Ukrainian
-                const secondaryText = targetLanguage === 'uk' ? item.en : item.uk;
-
                 if (currentCategory === 'letters') {
-                    // Huge letters since there are only 6 per page
-                    card.innerHTML = `
-                        <div class="absolute inset-0 opacity-0 group-hover:opacity-5 bg-black transition-opacity"></div>
-                        <span class="emoji-animate text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-gray-800">${item.emoji}</span>
-                        <div class="flex flex-col items-center leading-tight w-full px-1 mt-2">
-                            <span class="text-sm md:text-lg font-bold text-gray-400">(${secondaryText})</span>
-                        </div>
-                    `;
+                    card.innerHTML = `<span class="emoji-animate text-8xl sm:text-9xl font-black text-gray-800 drop-shadow-sm">${item.emoji}</span>`;
                 } else {
+                    const translationText = targetLanguage === 'uk' ? item.en : item.uk;
                     card.innerHTML = `
                         <div class="absolute inset-0 opacity-0 group-hover:opacity-5 bg-black transition-opacity"></div>
                         <span class="emoji-animate text-5xl sm:text-6xl md:text-7xl mb-1">${item.emoji}</span>
                         <div class="flex flex-col items-center leading-tight w-full px-1">
                             <span class="text-base sm:text-lg md:text-xl font-black text-gray-800 capitalize truncate w-full text-center">${item[targetLanguage]}</span>
-                            <span class="text-xs sm:text-sm md:text-base font-bold text-gray-400">(${secondaryText})</span>
+                            <span class="text-xs sm:text-sm md:text-base font-bold text-gray-400">(${translationText})</span>
                         </div>
                     `;
                 }
 
                 card.onclick = (e) => {
+                    card.classList.add('card-active-flash');
+                    setTimeout(() => card.classList.remove('card-active-flash'), 150);
+
                     speakWord(item);
                     showWordText(item);
                     createSparkles(e, card);
@@ -481,56 +563,69 @@
             });
         }
 
+        // Керування навігацією
         document.getElementById('back-btn').onclick = () => {
             document.getElementById('game-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('flex');
             document.getElementById('home-screen').classList.remove('hidden');
             document.getElementById('home-screen').classList.add('flex');
-            
             document.getElementById('current-word').style.opacity = 0;
             document.getElementById('current-translation').style.opacity = 0;
         };
 
+        // Кнопки сторінок
         document.getElementById('prev-page-btn').onclick = () => {
-            if (currentLetterPage > 0) {
-                currentLetterPage--;
-                renderGrid();
+            if (currentCategory === 'letters') {
+                if (currentLetterPage > 0) {
+                    currentLetterPage--;
+                    renderGrid();
+                }
+            } else if (currentCategory === 'letters_words') {
+                if (currentLettersWordsIndex > 0) {
+                    currentLettersWordsIndex--;
+                    renderGrid();
+                }
             }
         };
 
         document.getElementById('next-page-btn').onclick = () => {
-            const categoryData = gameData[currentCategory];
-            const allItems = categoryData.getItems ? categoryData.getItems(targetLanguage) : categoryData.items;
-            const totalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
-            
-            if (currentLetterPage < totalPages - 1) {
-                currentLetterPage++;
-                renderGrid();
+            if (currentCategory === 'letters') {
+                const allItems = gameData.letters.getItems(targetLanguage);
+                if (currentLetterPage < Math.ceil(allItems.length / ITEMS_PER_PAGE) - 1) {
+                    currentLetterPage++;
+                    renderGrid();
+                }
+            } else if (currentCategory === 'letters_words') {
+                const langData = lettersWordsData[targetLanguage] || lettersWordsData['en'];
+                if (currentLettersWordsIndex < langData.length - 1) {
+                    currentLettersWordsIndex++;
+                    renderGrid();
+                }
             }
         };
 
         window.onload = () => {
             window.speechSynthesis.getVoices();
             populateVoiceList();
-            
             renderHomeCategories();
 
+            // Settings Modal logic
             const modal = document.getElementById('settings-modal');
             document.getElementById('settings-btn').onclick = () => modal.classList.remove('hidden');
             document.getElementById('close-settings').onclick = () => modal.classList.add('hidden');
             
+            // Name change logic
             const nameInput = document.getElementById('child-name-input');
             const displayName = document.getElementById('display-name');
-            
-            // Виправлена помилка з дужкою:
             nameInput.addEventListener('input', (e) => {
                 displayName.textContent = e.target.value.trim() || 'Мія';
-            }); 
+            });
 
             // Language change logic
             document.getElementById('language-select').onchange = (e) => {
                 targetLanguage = e.target.value;
                 currentLetterPage = 0; 
+                currentLettersWordsIndex = 0;
                 populateVoiceList();
                 if (!document.getElementById('game-screen').classList.contains('hidden')) {
                     renderGrid(); 
@@ -538,81 +633,83 @@
             };
         };
 
-        // --- ДОДАНО: ПІДТРИМКА КЛАВІАТУРИ ---
+        // --- KEYBOARD SUPPORT ---
         document.addEventListener('keydown', (e) => {
-            // Ігноруємо натискання, якщо дитина щось вводить у текстове поле (наприклад, ім'я)
-            if (e.target.tagName === 'INPUT') return;
+            if (e.target.tagName === 'INPUT') return; // Ignore when editing name
 
             const isGameScreenActive = !document.getElementById('game-screen').classList.contains('hidden');
             const isSettingsActive = !document.getElementById('settings-modal').classList.contains('hidden');
 
-            // 1. Кнопка Escape - вихід з гри або закриття налаштувань
             if (e.key === 'Escape') {
-                if (isSettingsActive) {
-                    document.getElementById('close-settings').click();
-                } else if (isGameScreenActive) {
-                    document.getElementById('back-btn').click();
-                }
+                if (isSettingsActive) document.getElementById('close-settings').click();
+                else if (isGameScreenActive) document.getElementById('back-btn').click();
                 return;
             }
 
-            // 2. Стрілки - гортання сторінок з літерами
-            if (isGameScreenActive && currentCategory === 'letters') {
-                if (e.key === 'ArrowLeft' && currentLetterPage > 0) {
-                    document.getElementById('prev-page-btn').click();
-                    return;
-                }
-                if (e.key === 'ArrowRight') {
-                    const allLetters = gameData.letters.getItems(targetLanguage);
-                    const totalPages = Math.ceil(allLetters.length / ITEMS_PER_PAGE);
-                    if (currentLetterPage < totalPages - 1) {
-                        document.getElementById('next-page-btn').click();
-                    }
-                    return;
+            // Керування стрілками
+            if (isGameScreenActive) {
+                if (currentCategory === 'letters' || currentCategory === 'letters_words') {
+                    if (e.key === 'ArrowLeft') document.getElementById('prev-page-btn').click();
+                    if (e.key === 'ArrowRight') document.getElementById('next-page-btn').click();
                 }
             }
 
-            // 3. Натискання букв (Магія пошуку)
+            // Пошук літер та слів за абеткою на клавіатурі
             if (isGameScreenActive && e.key.length === 1) {
                 const pressedChar = e.key.toLowerCase();
-                let categoryData = currentCategory === 'letters' 
-                    ? gameData.letters.getItems(targetLanguage) 
-                    : gameData[currentCategory].items;
 
-                let itemIndex = -1;
+                if (currentCategory === 'letters_words') {
+                    const langData = lettersWordsData[targetLanguage] || lettersWordsData['en'];
+                    const itemIndex = langData.findIndex(item => item.letter.toLowerCase() === pressedChar);
+                    
+                    if (itemIndex !== -1) {
+                        currentLettersWordsIndex = itemIndex;
+                        renderGrid();
 
-                if (currentCategory === 'letters') {
-                    // Для літер: шукаємо точний збіг символу (враховуючи мову розкладки)
-                    itemIndex = categoryData.findIndex(item => item.emoji.toLowerCase() === pressedChar);
-                } else {
-                    // Для інших категорій: шукаємо перше слово, що починається на цю літеру
-                    itemIndex = categoryData.findIndex(item => item[targetLanguage].toLowerCase().startsWith(pressedChar));
-                }
-
-                if (itemIndex !== -1) {
-                    // Якщо ми в літерах, перевіряємо чи треба перегорнути сторінку
-                    if (currentCategory === 'letters') {
-                        const targetPage = Math.floor(itemIndex / ITEMS_PER_PAGE);
-                        if (currentLetterPage !== targetPage) {
-                            currentLetterPage = targetPage;
-                            renderGrid();
+                        const leftCard = document.querySelector('#game-grid .left-giant-card');
+                        if (leftCard) {
+                            leftCard.classList.add('card-active-flash');
+                            setTimeout(() => leftCard.classList.remove('card-active-flash'), 150);
+                            speakWord({ [targetLanguage]: langData[itemIndex].letter });
+                            showWordText({ [targetLanguage]: langData[itemIndex].letter, uk: 'Буква' });
+                            createSparkles(null, leftCard);
                         }
                     }
+                } else {
+                    let categoryData = currentCategory === 'letters' 
+                        ? gameData.letters.getItems(targetLanguage) 
+                        : gameData[currentCategory].items;
 
-                    // Знаходимо потрібну картку на екрані
-                    const cards = document.querySelectorAll('#game-grid .card-pop');
-                    const cardIndexOnScreen = currentCategory === 'letters' ? itemIndex % ITEMS_PER_PAGE : itemIndex;
-                    const targetCard = cards[cardIndexOnScreen];
+                    let itemIndex = -1;
 
-                    if (targetCard) {
-                        // Візуальна анімація "натискання" клавішею
-                        targetCard.style.transform = 'scale(0.9)';
-                        setTimeout(() => targetCard.style.transform = '', 150);
+                    if (currentCategory === 'letters') {
+                        itemIndex = categoryData.findIndex(item => item.emoji.toLowerCase() === pressedChar);
+                    } else {
+                        itemIndex = categoryData.findIndex(item => item[targetLanguage].toLowerCase().startsWith(pressedChar));
+                    }
 
-                        const item = categoryData[itemIndex];
-                        speakWord(item);
-                        showWordText(item);
-                        createSparkles(null, targetCard); // null, оскільки немає координати миші
+                    if (itemIndex !== -1) {
+                        if (currentCategory === 'letters') {
+                            const targetPage = Math.floor(itemIndex / ITEMS_PER_PAGE);
+                            if (currentLetterPage !== targetPage) {
+                                currentLetterPage = targetPage;
+                                renderGrid();
+                            }
+                        }
+
+                        const cards = document.querySelectorAll('#game-grid .card-pop');
+                        const cardIndexOnScreen = currentCategory === 'letters' ? itemIndex % ITEMS_PER_PAGE : itemIndex;
+                        const targetCard = cards[cardIndexOnScreen];
+
+                        if (targetCard) {
+                            targetCard.classList.add('card-active-flash');
+                            setTimeout(() => targetCard.classList.remove('card-active-flash'), 150);
+
+                            const item = categoryData[itemIndex];
+                            speakWord(item);
+                            showWordText(item);
+                            createSparkles(null, targetCard);
+                        }
                     }
                 }
             }
