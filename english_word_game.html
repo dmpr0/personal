@@ -364,11 +364,15 @@
             letters_words: {
                 id: 'letters_words', title: '🔤📖 Буква і слово', color: 'bg-teal-400 hover:bg-teal-500 text-teal-900 border-teal-300',
                 items: [] // Оновлюється динамічно
+            },
+            drawing: {
+                id: 'drawing', title: '🎨 Малювання', color: 'bg-indigo-400 hover:bg-indigo-500 text-indigo-900 border-indigo-300',
+                items: [] // Кастомний екран
             }
         };
 
         let currentCategory = 'animals';
-        let targetLanguage = 'uk'; // За замовчуванням встановлюємо Українську мову!
+        let targetLanguage = 'uk'; // За замовчуванням Українська мова!
         let availableVoices = [];
 
         function populateVoiceList() {
@@ -495,6 +499,47 @@
             }
         }
 
+        function playSound(type) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                if (type === 'clear') {
+                    // Звук "Вуууш" при очищенні
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(350, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(70, ctx.currentTime + 0.35);
+                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.35);
+                } else if (type === 'stamp') {
+                    // Веселий звук "Поп!" для штампу
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(120, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(500, ctx.currentTime + 0.12);
+                    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.12);
+                } else if (type === 'color') {
+                    // Звук бульбашки при зміні кольорів
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(260, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.08);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.08);
+                }
+            } catch(e) { 
+                console.log("Audio contexts is not started or supported yet.", e); 
+            }
+        }
+
         function renderHomeCategories() {
             const grid = document.getElementById('category-grid');
             grid.innerHTML = '';
@@ -595,9 +640,283 @@
             gridContainer.appendChild(rightContainer);
         }
 
+        // Стан малювального борду
+        let isDrawing = false;
+        let rainbowHue = 0;
+        let currentColor = '#ef4444'; // За замовчуванням червоний
+        let currentBrushSize = 14;   // Середній розмір
+        let drawMode = 'draw';       // 'draw', 'erase', 'stamp'
+        let selectedStamp = '🐶';
+
+        const drawingTranslations = {
+            red: { en: 'Red', uk: 'Червоний', be: 'Чырвоны' },
+            blue: { en: 'Blue', uk: 'Синій', be: 'Сіні' },
+            green: { en: 'Green', uk: 'Зелений', be: 'Зялёны' },
+            yellow: { en: 'Yellow', uk: 'Жовтий', be: 'Жоўты' },
+            orange: { en: 'Orange', uk: 'Помаранчевий', be: 'Аранжавы' },
+            purple: { en: 'Purple', uk: 'Фіолетовий', be: 'Фіялетавы' },
+            pink: { en: 'Pink', uk: 'Рожевий', be: 'Ружовы' },
+            black: { en: 'Black', uk: 'Чорний', be: 'Чорны' },
+            rainbow: { en: 'Rainbow', uk: 'Веселка', be: 'Вясёлка' },
+            eraser: { en: 'Eraser', uk: 'Гумка', be: 'Гумка' },
+            thin: { en: 'Thin', uk: 'Тонкий', be: 'Тонкі' },
+            medium: { en: 'Medium', uk: 'Середній', be: 'Сярэдні' },
+            thick: { en: 'Thick', uk: 'Товстий', be: 'Таўсты' }
+        };
+
+        const stampTranslations = {
+            '🐶': { en: 'Dog', uk: 'Собака', be: 'Сабака' },
+            '🍎': { en: 'Apple', uk: 'Яблуко', be: 'Яблык' },
+            '🥦': { en: 'Broccoli', uk: 'Броколі', be: 'Брокалі' },
+            '🚗': { en: 'Car', uk: 'Машина', be: 'Машына' },
+            '🧸': { en: 'Teddy', uk: 'Ведмедик', be: 'Мішка' },
+            '⭐': { en: 'Star', uk: 'Зірка', be: 'Зорка' }
+        };
+
+        function selectColor(colorId, el) {
+            drawMode = colorId === 'erase' ? 'erase' : 'draw';
+            if (colorId !== 'erase') {
+                currentColor = colorId;
+            }
+            
+            document.querySelectorAll('.draw-control').forEach(btn => btn.classList.remove('ring-4', 'ring-indigo-500', 'ring-offset-2', 'scale-110'));
+            el.classList.add('ring-4', 'ring-indigo-500', 'ring-offset-2', 'scale-110');
+            
+            playSound('color');
+            
+            const trKey = colorId === 'erase' ? 'eraser' : (colorId === 'rainbow' ? 'rainbow' : getColorNameKey(colorId));
+            speakWord(drawingTranslations[trKey]);
+        }
+
+        function getColorNameKey(hex) {
+            if (hex === '#ef4444') return 'red';
+            if (hex === '#3b82f6') return 'blue';
+            if (hex === '#22c55e') return 'green';
+            if (hex === '#eab308') return 'yellow';
+            if (hex === '#f97316') return 'orange';
+            if (hex === '#a855f7') return 'purple';
+            if (hex === '#ec4899') return 'pink';
+            if (hex === '#1f2937') return 'black';
+            return 'red';
+        }
+
+        function selectSize(size, el) {
+            currentBrushSize = size;
+            document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-indigo-400', 'bg-indigo-100'));
+            el.classList.add('ring-2', 'ring-indigo-400', 'bg-indigo-100');
+            
+            playSound('color');
+            const sizeKey = size === 6 ? 'thin' : (size === 14 ? 'medium' : 'thick');
+            speakWord(drawingTranslations[sizeKey]);
+        }
+
+        function selectStamp(stamp, el) {
+            drawMode = 'stamp';
+            selectedStamp = stamp;
+            
+            document.querySelectorAll('.draw-control').forEach(btn => btn.classList.remove('ring-4', 'ring-indigo-500', 'ring-offset-2', 'scale-110'));
+            el.classList.add('ring-4', 'ring-indigo-500', 'ring-offset-2', 'scale-110');
+            
+            playSound('color');
+            speakWord(stampTranslations[stamp]);
+        }
+
+        function clearCanvas() {
+            const canvas = document.getElementById('paintCanvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                playSound('clear');
+                speakWord({ en: 'Cleared', uk: 'Стерто', be: 'Сцёрта' });
+            }
+        }
+
+        function renderDrawingBoard() {
+            const gridContainer = document.getElementById('game-grid');
+            gridContainer.className = "w-full h-full flex-1 min-h-0";
+            
+            gridContainer.innerHTML = `
+                <div class="flex flex-col lg:flex-row gap-3 w-full h-full select-none">
+                    
+                    <!-- Панель керування інструментами (адаптивна) -->
+                    <div class="flex flex-row lg:flex-col justify-between items-center bg-white rounded-3xl p-2.5 md:p-4 border-4 border-indigo-200 gap-2 shrink-0 w-full lg:w-44 h-auto lg:h-full overflow-x-auto lg:overflow-y-auto">
+                        
+                        <!-- Кольори -->
+                        <div class="flex flex-col gap-1 items-center shrink-0">
+                            <span class="text-xs font-black text-indigo-500 uppercase tracking-wider hidden lg:block mb-1">Кольори</span>
+                            <div class="flex lg:grid lg:grid-cols-3 gap-2 justify-center">
+                                <button onclick="selectColor('#ef4444', this)" class="draw-control w-10 h-10 rounded-full bg-red-500 border-2 border-white shadow-md active:scale-95 transition-all ring-4 ring-indigo-500 ring-offset-2 scale-110"></button>
+                                <button onclick="selectColor('#3b82f6', this)" class="draw-control w-10 h-10 rounded-full bg-blue-500 border-2 border-white shadow-md active:scale-95 transition-all"></button>
+                                <button onclick="selectColor('#22c55e', this)" class="draw-control w-10 h-10 rounded-full bg-green-500 border-2 border-white shadow-md active:scale-95 transition-all"></button>
+                                <button onclick="selectColor('#eab308', this)" class="draw-control w-10 h-10 rounded-full bg-yellow-500 border-2 border-white shadow-md active:scale-95 transition-all"></button>
+                                <button onclick="selectColor('#f97316', this)" class="draw-control w-10 h-10 rounded-full bg-orange-500 border-2 border-white shadow-md active:scale-95 transition-all"></button>
+                                <button onclick="selectColor('#a855f7', this)" class="draw-control w-10 h-10 rounded-full bg-purple-500 border-2 border-white shadow-md active:scale-95 transition-all"></button>
+                                <button onclick="selectColor('#ec4899', this)" class="draw-control w-10 h-10 rounded-full bg-pink-500 border-2 border-white shadow-md active:scale-95 transition-all"></button>
+                                <button onclick="selectColor('#1f2937', this)" class="draw-control w-10 h-10 rounded-full bg-gray-800 border-2 border-white shadow-md active:scale-95 transition-all"></button>
+                                <button onclick="selectColor('rainbow', this)" class="draw-control w-10 h-10 rounded-full bg-gradient-to-tr from-red-500 via-green-500 to-blue-500 border-2 border-white shadow-md active:scale-95 transition-all flex items-center justify-center text-sm" title="Веселка">🌈</button>
+                            </div>
+                        </div>
+
+                        <!-- Розмір пензлика -->
+                        <div class="flex flex-col gap-1 items-center shrink-0 border-l lg:border-l-0 lg:border-t-2 border-indigo-100 pl-3 lg:pl-0 lg:pt-3 w-auto lg:w-full">
+                            <span class="text-xs font-black text-indigo-500 uppercase tracking-wider hidden lg:block mb-1">Пензлик</span>
+                            <div class="flex gap-2">
+                                <button onclick="selectSize(6, this)" class="size-btn w-9 h-9 rounded-xl bg-gray-50 border-2 border-white shadow-sm flex items-center justify-center font-black text-gray-700 text-xs active:scale-95 transition-all">✏️</button>
+                                <button onclick="selectSize(14, this)" class="size-btn w-9 h-9 rounded-xl bg-indigo-100 border-2 border-white shadow-sm flex items-center justify-center font-black text-gray-700 text-sm active:scale-95 transition-all ring-2 ring-indigo-400">🖌️</button>
+                                <button onclick="selectSize(24, this)" class="size-btn w-9 h-9 rounded-xl bg-gray-50 border-2 border-white shadow-sm flex items-center justify-center font-black text-gray-700 text-lg active:scale-95 transition-all">🖍️</button>
+                            </div>
+                        </div>
+
+                        <!-- Штампи-стікери -->
+                        <div class="flex flex-col gap-1 items-center shrink-0 border-l lg:border-l-0 lg:border-t-2 border-indigo-100 pl-3 lg:pl-0 lg:pt-3 w-auto lg:w-full">
+                            <span class="text-xs font-black text-indigo-500 uppercase tracking-wider hidden lg:block mb-1">Штампи</span>
+                            <div class="flex lg:grid lg:grid-cols-3 gap-1.5 justify-center">
+                                <button onclick="selectStamp('🐶', this)" class="draw-control stamp-btn w-10 h-10 rounded-xl bg-indigo-50/50 border-2 border-white shadow-sm flex items-center justify-center text-xl active:scale-95 transition-all">🐶</button>
+                                <button onclick="selectStamp('🍎', this)" class="draw-control stamp-btn w-10 h-10 rounded-xl bg-indigo-50/50 border-2 border-white shadow-sm flex items-center justify-center text-xl active:scale-95 transition-all">🍎</button>
+                                <button onclick="selectStamp('🥦', this)" class="draw-control stamp-btn w-10 h-10 rounded-xl bg-indigo-50/50 border-2 border-white shadow-sm flex items-center justify-center text-xl active:scale-95 transition-all">🥦</button>
+                                <button onclick="selectStamp('🚗', this)" class="draw-control stamp-btn w-10 h-10 rounded-xl bg-indigo-50/50 border-2 border-white shadow-sm flex items-center justify-center text-xl active:scale-95 transition-all">🚗</button>
+                                <button onclick="selectStamp('🧸', this)" class="draw-control stamp-btn w-10 h-10 rounded-xl bg-indigo-50/50 border-2 border-white shadow-sm flex items-center justify-center text-xl active:scale-95 transition-all">🧸</button>
+                                <button onclick="selectStamp('⭐', this)" class="draw-control stamp-btn w-10 h-10 rounded-xl bg-indigo-50/50 border-2 border-white shadow-sm flex items-center justify-center text-xl active:scale-95 transition-all">⭐</button>
+                            </div>
+                        </div>
+
+                        <!-- Гумка та Стерти все -->
+                        <div class="flex gap-2 lg:flex-col items-center shrink-0 border-l lg:border-l-0 lg:border-t-2 border-indigo-100 pl-3 lg:pl-0 lg:pt-3 w-auto lg:w-full">
+                            <button onclick="selectColor('erase', this)" class="draw-control w-12 h-10 rounded-xl bg-gray-100 border-2 border-white shadow-md active:scale-95 transition-all flex items-center justify-center text-xl" title="Гумка">🧽</button>
+                            <button onclick="clearCanvas()" class="w-12 h-10 rounded-xl bg-red-100 hover:bg-red-200 border-2 border-white shadow-md active:scale-95 transition-all flex items-center justify-center text-xl text-red-700" title="Стерти все">🗑️</button>
+                        </div>
+
+                    </div>
+                    
+                    <!-- Борд для малювання (Canvas) -->
+                    <div class="flex-1 min-h-0 bg-white rounded-3xl border-4 border-indigo-300 relative overflow-hidden shadow-lg">
+                        <canvas id="paintCanvas" class="w-full h-full block touch-none cursor-crosshair bg-white"></canvas>
+                    </div>
+                    
+                </div>
+            `;
+            
+            // Скидаємо стан малювання до початкового
+            isDrawing = false;
+            currentColor = '#ef4444';
+            currentBrushSize = 14;
+            drawMode = 'draw';
+            
+            // Налаштовуємо розмір полотна після завантаження дерева елементів
+            setTimeout(() => {
+                const canvas = document.getElementById('paintCanvas');
+                if (canvas) {
+                    const rect = canvas.parentNode.getBoundingClientRect();
+                    canvas.width = rect.width;
+                    canvas.height = rect.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    initCanvasDrawingEvents(canvas);
+                }
+            }, 80);
+        }
+
+        function initCanvasDrawingEvents(canvas) {
+            const ctx = canvas.getContext('2d');
+            
+            function getCoords(e) {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: clientX - rect.left,
+                    y: clientY - rect.top
+                };
+            }
+
+            function startDrawing(e) {
+                isDrawing = true;
+                const coords = getCoords(e);
+                
+                if (drawMode === 'stamp') {
+                    drawSticker(coords.x, coords.y);
+                    isDrawing = false; // Штамп ставиться одиночним тапом
+                    return;
+                }
+
+                ctx.beginPath();
+                ctx.moveTo(coords.x, coords.y);
+                
+                if (e.cancelable) e.preventDefault();
+            }
+
+            function draw(e) {
+                if (!isDrawing) return;
+                const coords = getCoords(e);
+
+                if (drawMode === 'stamp') return;
+
+                ctx.lineTo(coords.x, coords.y);
+                
+                // Визначаємо колір лінії
+                if (drawMode === 'erase') {
+                    ctx.strokeStyle = '#ffffff';
+                } else if (currentColor === 'rainbow') {
+                    rainbowHue = (rainbowHue + 4) % 360;
+                    ctx.strokeStyle = `hsl(${rainbowHue}, 90%, 55%)`;
+                } else {
+                    ctx.strokeStyle = currentColor;
+                }
+
+                ctx.lineWidth = currentBrushSize;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.stroke();
+
+                if (e.cancelable) e.preventDefault();
+            }
+
+            function stopDrawing() {
+                isDrawing = false;
+                ctx.closePath();
+            }
+
+            function drawSticker(x, y) {
+                ctx.save();
+                // Масштабуємо розмір емодзі відповідно до обраного пензля
+                ctx.font = `${currentBrushSize * 4}px 'Nunito', sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(selectedStamp, x, y);
+                ctx.restore();
+                
+                playSound('stamp');
+                speakWord(stampTranslations[selectedStamp]);
+            }
+
+            // Використовуємо універсальні Pointer Events для миші та тач-екранів iPad
+            if (window.PointerEvent) {
+                canvas.addEventListener('pointerdown', startDrawing);
+                canvas.addEventListener('pointermove', draw);
+                canvas.addEventListener('pointerup', stopDrawing);
+                canvas.addEventListener('pointercancel', stopDrawing);
+            } else {
+                canvas.addEventListener('touchstart', startDrawing);
+                canvas.addEventListener('touchmove', draw);
+                canvas.addEventListener('touchend', stopDrawing);
+                canvas.addEventListener('mousedown', startDrawing);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('mouseup', stopDrawing);
+            }
+        }
+
         function renderGrid() {
             if (currentCategory === 'letters_words') {
                 renderLettersWords();
+                return;
+            }
+
+            if (currentCategory === 'drawing') {
+                document.getElementById('pagination-controls').classList.add('hidden');
+                renderDrawingBoard();
                 return;
             }
 
@@ -767,7 +1086,7 @@
             }
 
             // Пошук літер, цифр та слів за абеткою на клавіатурі
-            if (isGameScreenActive && e.key.length === 1) {
+            if (isGameScreenActive && e.key.length === 1 && currentCategory !== 'drawing') {
                 const pressedChar = e.key.toLowerCase();
 
                 if (currentCategory === 'letters_words') {
