@@ -12,7 +12,7 @@
             background-color: #f0fdf4;
             background-image: radial-gradient(#bbf7d0 2px, transparent 2px);
             background-size: 30px 30px;
-            /* Запобігаємо виділенню тексту та скролу */
+            /* Запобігаємо виділенню тексту та випадковому скролу на iPad */
             user-select: none; 
             -webkit-user-select: none;
             touch-action: manipulation;
@@ -25,7 +25,7 @@
         /* Ефект спалаху при натисканні */
         .card-active-flash {
             transform: scale(0.92) !important;
-            background-color: #fef08a !important; /* Яскравий спалах */
+            background-color: #fef08a !important; /* Яскравий жовтий спалах */
         }
 
         @keyframes bounce-in {
@@ -75,8 +75,8 @@
                 <div>
                     <label class="block text-gray-700 font-bold mb-2">🌍 Мова вивчення:</label>
                     <select id="language-select" class="w-full px-4 py-3 rounded-xl border-2 border-blue-200 bg-blue-50 text-gray-800 font-bold focus:outline-none focus:border-blue-500 shadow-inner appearance-none cursor-pointer">
+                        <option value="uk" selected>🇺🇦 Українська</option>
                         <option value="en">🇬🇧 Англійська</option>
-                        <option value="uk">🇺🇦 Українська</option>
                         <option value="be">⚪🔴⚪ Білоруська</option>
                     </select>
                 </div>
@@ -96,17 +96,17 @@
     </div>
 
     <!-- 1. HOME SCREEN (Categories) -->
-    <div id="home-screen" class="w-full h-full flex flex-col items-center justify-center p-4 relative max-w-5xl mx-auto">
+    <div id="home-screen" class="w-full h-full flex flex-col items-center justify-center p-4 relative max-w-5xl mx-auto overflow-y-auto">
         <!-- Settings Button -->
         <button id="settings-btn" class="absolute top-4 right-4 md:top-6 md:right-6 bg-white p-3 rounded-full shadow-lg border-2 border-green-200 hover:bg-green-50 text-2xl transition-transform hover:scale-110 z-40">
             ⚙️
         </button>
         
-        <h1 class="text-3xl md:text-5xl font-black text-green-600 mb-6 md:mb-10 text-center drop-shadow-sm leading-tight">
+        <h1 class="text-3xl md:text-5xl font-black text-green-600 mb-6 md:mb-10 text-center drop-shadow-sm leading-tight shrink-0">
             Привіт, <span id="display-name">Мія</span>!<br>Обери гру
         </h1>
         
-        <main id="category-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 w-full px-2">
+        <main id="category-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6 w-full px-2 max-w-4xl">
             <!-- Category buttons generated here -->
         </main>
     </div>
@@ -151,33 +151,108 @@
     </div>
 
     <script>
-        const ITEMS_PER_PAGE = 6; // Для літер
+        const ITEMS_PER_PAGE = 6; // Для літер та цифр
         let currentLetterPage = 0;
         let currentLettersWordsIndex = 0; // Для розділу Літера та слова
 
-        // Набір даних для нового розділу "Літери та слова"
+        // Повна база даних для розділу "Літери та слова" (усі літери абетки для кожної мови)
         const lettersWordsData = {
             en: [
-                { letter: 'A', words: [{ emoji: '🍎', en: 'Apple', uk: 'Яблуко' }, { emoji: '🐜', en: 'Ant', uk: 'Мураха' }, { emoji: '🐊', en: 'Alligator', uk: 'Алігатор' }] },
-                { letter: 'B', words: [{ emoji: '🐻', en: 'Bear', uk: 'Ведмедик' }, { emoji: '⚽', en: 'Ball', uk: 'М\'яч' }, { emoji: '🍌', en: 'Banana', uk: 'Банан' }] },
-                { letter: 'C', words: [{ emoji: '🐱', en: 'Cat', uk: 'Кіт' }, { emoji: '🚗', en: 'Car', uk: 'Машина' }, { emoji: '🥕', en: 'Carrot', uk: 'Морква' }] },
-                { letter: 'D', words: [{ emoji: '🐶', en: 'Dog', uk: 'Собака' }, { emoji: '🥁', en: 'Drum', uk: 'Барабан' }, { emoji: '🦆', en: 'Duck', uk: 'Качка' }] },
-                { letter: 'E', words: [{ emoji: '🥚', en: 'Egg', uk: 'Яйце' }, { emoji: '🐘', en: 'Elephant', uk: 'Слон' }, { emoji: '🍆', en: 'Eggplant', uk: 'Баклажан' }] },
-                { letter: 'F', words: [{ emoji: '🦊', en: 'Fox', uk: 'Лисиця' }, { emoji: '🐸', en: 'Frog', uk: 'Жаба' }, { emoji: '🐟', en: 'Fish', uk: 'Риба' }] }
+                { letter: 'A', words: [{ emoji: '🍎', en: 'Apple', uk: 'Яблуко', be: 'Яблык' }, { emoji: '🐜', en: 'Ant', uk: 'Мураха', be: 'Мурашка' }, { emoji: '🐊', en: 'Alligator', uk: 'Алігатор', be: 'Алігатар' }] },
+                { letter: 'B', words: [{ emoji: '🐻', en: 'Bear', uk: 'Ведмедик', be: 'Мішка' }, { emoji: '⚽', en: 'Ball', uk: 'М\'яч', be: 'Мяч' }, { emoji: '🍌', en: 'Banana', uk: 'Банан', be: 'Банан' }] },
+                { letter: 'C', words: [{ emoji: '🐱', en: 'Cat', uk: 'Кіт', be: 'Кот' }, { emoji: '🚗', en: 'Car', uk: 'Машина', be: 'Машына' }, { emoji: '🥕', en: 'Carrot', uk: 'Морква', be: 'Морква' }] },
+                { letter: 'D', words: [{ emoji: '🐶', en: 'Dog', uk: 'Собака', be: 'Сабака' }, { emoji: '🥁', en: 'Drum', uk: 'Барабан', be: 'Барабан' }, { emoji: '🦆', en: 'Duck', uk: 'Качка', be: 'Качка' }] },
+                { letter: 'E', words: [{ emoji: '🥚', en: 'Egg', uk: 'Яйце', be: 'Яйка' }, { emoji: '🐘', en: 'Elephant', uk: 'Слон', be: 'Слон' }, { emoji: '🍆', en: 'Eggplant', uk: 'Баклажан', be: 'Баклажан' }] },
+                { letter: 'F', words: [{ emoji: '🦊', en: 'Fox', uk: 'Лисиця', be: 'Ліса' }, { emoji: '🐸', en: 'Frog', uk: 'Жаба', be: 'Жаба' }, { emoji: '🐟', en: 'Fish', uk: 'Риба', be: 'Рыба' }] },
+                { letter: 'G', words: [{ emoji: '🍇', en: 'Grapes', uk: 'Виноград', be: 'Вінаград' }, { emoji: '🦒', en: 'Giraffe', uk: 'Жираф', be: 'Жырафа' }, { emoji: '🐐', en: 'Goat', uk: 'Коза', be: 'Каза' }] },
+                { letter: 'H', words: [{ emoji: '🧢', en: 'Hat', uk: 'Шапка', be: 'Шапка' }, { emoji: '🐴', en: 'Horse', uk: 'Кінь', be: 'Конь' }, { emoji: '🏠', en: 'House', uk: 'Будинок', be: 'Дом' }] },
+                { letter: 'I', words: [{ emoji: '🧊', en: 'Ice', uk: 'Лід', be: 'Лёд' }, { emoji: '🦎', en: 'Iguana', uk: 'Ігуана', be: 'Ігуана' }, { emoji: '🪱', en: 'Insect', uk: 'Комаха', be: 'Насякомае' }] },
+                { letter: 'J', words: [{ emoji: '🥤', en: 'Juice', uk: 'Сік', be: 'Сок' }, { emoji: '🪼', en: 'Jellyfish', uk: 'Медуза', be: 'Медуза' }, { emoji: '✈️', en: 'Jet', uk: 'Літак', be: 'Самалёт' }] },
+                { letter: 'K', words: [{ emoji: '🪁', en: 'Kite', uk: 'Змій', be: 'Змей' }, { emoji: '🦘', en: 'Kangaroo', uk: 'Кенгуру', be: 'Кенгуру' }, { emoji: '🔑', en: 'Key', uk: 'Ключ', be: 'Ключ' }] },
+                { letter: 'L', words: [{ emoji: '🦁', en: 'Lion', uk: 'Лев', be: 'Леў' }, { emoji: '🍋', en: 'Lemon', uk: 'Лимон', be: 'Лімон' }, { emoji: '🍃', en: 'Leaf', uk: 'Листок', be: 'Ліст' }] },
+                { letter: 'M', words: [{ emoji: '🐵', en: 'Monkey', uk: 'Мавпа', be: 'Малпа' }, { emoji: '🐭', en: 'Mouse', uk: 'Миша', be: 'Мыш' }, { emoji: '🍈', en: 'Melon', uk: 'Диня', be: 'Дыня' }] },
+                { letter: 'N', words: [{ emoji: '🪺', en: 'Nest', uk: 'Гніздо', be: 'Гняздо' }, { emoji: '🕸️', en: 'Net', uk: 'Павутина', be: 'Павуцінне' }, { emoji: '🥜', en: 'Nut', uk: 'Горіх', be: 'Арэх' }] },
+                { letter: 'O', words: [{ emoji: '🦉', en: 'Owl', uk: 'Сова', be: 'Сава' }, { emoji: '🍊', en: 'Orange', uk: 'Апельсин', be: 'Апельсін' }, { emoji: '🐙', en: 'Octopus', uk: 'Восьминіг', be: 'Васьміног' }] },
+                { letter: 'P', words: [{ emoji: '🐼', en: 'Panda', uk: 'Панда', be: 'Панда' }, { emoji: '🐷', en: 'Pig', uk: 'Свиня', be: 'Свіння' }, { emoji: '🍐', en: 'Pear', uk: 'Груша', be: 'Груша' }] },
+                { letter: 'Q', words: [{ emoji: '👑', en: 'Queen', uk: 'Королева', be: 'Каралева' }, { emoji: '🐦', en: 'Quail', uk: 'Перепілка', be: 'Перапёлка' }, { emoji: '🪶', en: 'Quill', uk: 'Перо', be: 'Пяро' }] },
+                { letter: 'R', words: [{ emoji: '🚀', en: 'Rocket', uk: 'Ракета', be: 'Ракета' }, { emoji: '🐰', en: 'Rabbit', uk: 'Кролик', be: 'Трус' }, { emoji: '🌹', en: 'Rose', uk: 'Троянда', be: 'Ружа' }] },
+                { letter: 'S', words: [{ emoji: '☀️', en: 'Sun', uk: 'Сонце', be: 'Сонца' }, { emoji: '🐍', en: 'Snake', uk: 'Змія', be: 'Змяя' }, { emoji: '🧦', en: 'Sock', uk: 'Шкарпетка', be: 'Шкарпэтка' }] },
+                { letter: 'T', words: [{ emoji: '🐯', en: 'Tiger', uk: 'Тигр', be: 'Тыгр' }, { emoji: '🍅', en: 'Tomato', uk: 'Помідор', be: 'Памідор' }, { emoji: '🚂', en: 'Train', uk: 'Потяг', be: 'Цягнік' }] },
+                { letter: 'U', words: [{ emoji: '☂️', en: 'Umbrella', uk: 'Парасоля', be: 'Парасон' }, { emoji: '🦄', en: 'Unicorn', uk: 'Єдиноріг', be: 'Адзінарог' }, { emoji: '🛸', en: 'UFO', uk: 'НЛО', be: 'НЛА' }] },
+                { letter: 'V', words: [{ emoji: '🎻', en: 'Violin', uk: 'Скрипка', be: 'Скрыпка' }, { emoji: '🚐', en: 'Van', uk: 'Фургон', be: 'Фургон' }, { emoji: '🏺', en: 'Vase', uk: 'Ваза', be: 'Ваза' }] },
+                { letter: 'W', words: [{ emoji: '🍉', en: 'Watermelon', uk: 'Кавун', be: 'Кавун' }, { emoji: '🐺', en: 'Wolf', uk: 'Вовк', be: 'Воўк' }, { emoji: '⌚', en: 'Watch', uk: 'Годинник', be: 'Гадзіннік' }] },
+                { letter: 'X', words: [{ emoji: '🪘', en: 'Xylophone', uk: 'Ксилофон', be: 'Ксілафон' }, { emoji: '🩳', en: 'X-ray', uk: 'Рентген', be: 'Рэнтген' }, { emoji: '🎄', en: 'Xmas tree', uk: 'Ялинка', be: 'Елка' }] },
+                { letter: 'Y', words: [{ emoji: '🪀', en: 'Yo-yo', uk: 'Йо-йо', be: 'Ё-ё' }, { emoji: '🐂', en: 'Yak', uk: 'Як', be: 'Як' }, { emoji: '⛵', en: 'Yacht', uk: 'Яхта', be: 'Яхта' }] },
+                { letter: 'Z', words: [{ emoji: '🦓', en: 'Zebra', uk: 'Зебра', be: 'Зебра' }, { emoji: '0️⃣', en: 'Zero', uk: 'Нуль', be: 'Нуль' }, { emoji: '🤐', en: 'Zipper', uk: 'Блискавка', be: 'Маланка' }] }
             ],
             uk: [
-                { letter: 'А', words: [{ emoji: '🍍', uk: 'Ананас', en: 'Pineapple' }, { emoji: '🚌', uk: 'Автобус', en: 'Bus' }, { emoji: '🦈', uk: 'Акула', en: 'Shark' }] },
-                { letter: 'Б', words: [{ emoji: '🍌', uk: 'Банан', en: 'Banana' }, { emoji: '🥁', uk: 'Барабан', en: 'Drum' }, { emoji: '🍆', uk: 'Баклажан', en: 'Eggplant' }] },
-                { letter: 'В', words: [{ emoji: '🐻', uk: 'Ведмідь', en: 'Bear' }, { emoji: '🚲', uk: 'Велосипед', en: 'Bicycle' }, { emoji: '🍒', uk: 'Вишня', en: 'Cherry' }] },
-                { letter: 'К', words: [{ emoji: '🐱', uk: 'Кіт', en: 'Cat' }, { emoji: '🐰', uk: 'Кролик', en: 'Rabbit' }, { emoji: '🐮', uk: 'Корова', en: 'Cow' }] },
-                { letter: 'М', words: [{ emoji: '🐵', uk: 'Мавпа', en: 'Monkey' }, { emoji: '🚗', uk: 'Машина', en: 'Car' }, { emoji: '🥕', uk: 'Морква', en: 'Carrot' }] }
+                { letter: 'А', words: [{ emoji: '🍍', uk: 'Ананас', en: 'Pineapple', be: 'Ананас' }, { emoji: '🚌', uk: 'Автобус', en: 'Bus', be: 'Аўтобус' }, { emoji: '🦈', uk: 'Акула', en: 'Shark', be: 'Акула' }] },
+                { letter: 'Б', words: [{ emoji: '🍌', uk: 'Банан', en: 'Banana', be: 'Банан' }, { emoji: '🥁', uk: 'Барабан', en: 'Drum', be: 'Барабан' }, { emoji: '🍆', uk: 'Баклажан', en: 'Eggplant', be: 'Баклажан' }] },
+                { letter: 'В', words: [{ emoji: '🐻', uk: 'Ведмідь', en: 'Bear', be: 'Мядзведзь' }, { emoji: '🚲', uk: 'Велосипед', en: 'Bicycle', be: 'Ровар' }, { emoji: '🍒', uk: 'Вишня', en: 'Cherry', be: 'Вішня' }] },
+                { letter: 'Г', words: [{ emoji: '🍄', uk: 'Гриб', en: 'Mushroom', be: 'Грыб' }, { emoji: '🍐', uk: 'Груша', en: 'Pear', be: 'Груша' }, { emoji: '🦆', uk: 'Гусь', en: 'Goose', be: 'Гусь' }] },
+                { letter: 'Ґ', words: [{ emoji: '🔘', uk: 'Ґудзик', en: 'Button', be: 'Гузік' }, { emoji: '🐦', uk: 'Ґава', en: 'Crow', be: 'Варона' }, { emoji: '🌱', uk: 'Ґрунт', en: 'Soil', be: 'Грунт' }] },
+                { letter: 'Д', words: [{ emoji: '🌳', uk: 'Дерево', en: 'Tree', be: 'Дрэва' }, { emoji: '🐉', uk: 'Дракон', en: 'Dragon', be: 'Дракон' }, { emoji: '🐬', uk: 'Дельфін', en: 'Dolphin', be: 'Дэльфін' }] },
+                { letter: 'Е', words: [{ emoji: '🚜', uk: 'Екскаватор', en: 'Excavator', be: 'Экскаватар' }, { emoji: '🧝', uk: 'Ельф', en: 'Elf', be: 'Эльф' }, { emoji: '🦤', uk: 'Ему', en: 'Emu', be: 'Эму' }] },
+                { letter: 'Є', words: [{ emoji: '🦄', uk: 'Єдиноріг', en: 'Unicorn', be: 'Адзінарог' }, { emoji: '🦝', uk: 'Єнот', en: 'Raccoon', be: 'Енот' }, { emoji: '🦔', uk: 'Єхидна', en: 'Echidna', be: 'Ехідна' }] },
+                { letter: 'Ж', words: [{ emoji: '🐸', uk: 'Жаба', en: 'Frog', be: 'Жаба' }, { emoji: '🦒', uk: 'Жираф', en: 'Giraffe', be: 'Жырафа' }, { emoji: '🌰', uk: 'Жолудь', en: 'Acorn', be: 'Жалуды' }] },
+                { letter: 'З', words: [{ emoji: '🦓', uk: 'Зебра', en: 'Zebra', be: 'Зебра' }, { emoji: '🐰', uk: 'Заєць', en: 'Hare', be: 'Заяц' }, { emoji: '⭐', uk: 'Зірка', en: 'Star', be: 'Зорка' }] },
+                { letter: 'И', words: [{ emoji: '🐳', uk: 'Кит (літера И)', en: 'Whale', be: 'Кіт' }, { emoji: '🐟', uk: 'Риба (літера И)', en: 'Fish', be: 'Рыба' }, { emoji: '🧀', uk: 'Сир (літера И)', en: 'Cheese', be: 'Сыр' }] },
+                { letter: 'І', words: [{ emoji: '🧸', uk: 'Іграшка', en: 'Toy', be: 'Мішка' }, { emoji: '🦃', uk: 'Індик', en: 'Turkey', be: 'Індык' }, { emoji: '🫚', uk: 'Імбир', en: 'Ginger', be: 'Імбір' }] },
+                { letter: 'Ї', words: [{ emoji: '🦔', uk: 'Їжак', en: 'Hedgehog', be: 'Вожык' }, { emoji: '🍔', uk: 'Їжа', en: 'Food', be: 'Ежа' }, { emoji: '🍽️', uk: 'Їдальня', en: 'Dining room', be: 'сталовая' }] },
+                { letter: 'Й', words: [{ emoji: '🥛', uk: 'Йогурт', en: 'Yogurt', be: 'Ёгурт' }, { emoji: '🧪', uk: 'Йод', en: 'Iodine', be: 'Ёд' }, { emoji: '👽', uk: 'Йода', en: 'Yoda', be: 'Ёда' }] },
+                { letter: 'К', words: [{ emoji: '🐱', uk: 'Кіт', en: 'Cat', be: 'Кот' }, { emoji: '🐰', uk: 'Кролик', en: 'Rabbit', be: 'Трус' }, { emoji: '🐮', uk: 'Корова', en: 'Cow', be: 'Карова' }] },
+                { letter: 'Л', words: [{ emoji: '🦁', uk: 'Лев', en: 'Lion', be: 'Леў' }, { emoji: '🍋', uk: 'Лимон', en: 'Lemon', be: 'Лімон' }, { emoji: '✈️', uk: 'Літак', en: 'Plane', be: 'Самалёт' }] },
+                { letter: 'М', words: [{ emoji: '🐵', uk: 'Мавпа', en: 'Monkey', be: 'Малпа' }, { emoji: '🚗', uk: 'Машина', en: 'Car', be: 'Машына' }, { emoji: '🥕', uk: 'Морква', en: 'Carrot', be: 'Морква' }] },
+                { letter: 'Н', words: [{ emoji: '🦏', uk: 'Носоріг', en: 'Rhino', be: 'Насарог' }, { emoji: '✂️', uk: 'Ножиці', en: 'Scissors', be: 'Ножніцы' }, { emoji: '🧵', uk: 'Нитка', en: 'Thread', be: 'Нітка' }] },
+                { letter: 'О', words: [{ emoji: '🥒', uk: 'Огірок', en: 'Cucumber', be: 'Агурок' }, { emoji: '🦌', uk: 'Олень', en: 'Deer', be: 'Алень' }, { emoji: '👓', uk: 'Окуляри', en: 'Glasses', be: 'Акуляры' }] },
+                { letter: 'П', words: [{ emoji: '🐼', uk: 'Панда', en: 'Panda', be: 'Панда' }, { emoji: '🚂', uk: 'Потяг', en: 'Train', be: 'Цягнік' }, { emoji: '🍅', uk: 'Помідор', en: 'Tomato', be: 'Памідор' }] },
+                { letter: 'Р', words: [{ emoji: '🚀', uk: 'Ракета', en: 'Rocket', be: 'Ракета' }, { emoji: '🐟', uk: 'Риба', en: 'Fish', be: 'Рыба' }, { emoji: '🤖', uk: 'Робот', en: 'Robot', be: 'Робат' }] },
+                { letter: 'С', words: [{ emoji: '🐘', uk: 'Слон', en: 'Elephant', be: 'Слон' }, { emoji: '🐶', uk: 'Собака', en: 'Dog', be: 'Сабака' }, { emoji: '☀️', uk: 'Сонце', en: 'Sun', be: 'Сонца' }] },
+                { letter: 'Т', words: [{ emoji: '🚜', uk: 'Трактор', en: 'Tractor', be: 'Трактар' }, { emoji: '🐯', uk: 'Тигр', en: 'Tiger', be: 'Тыгр' }, { emoji: '🎂', uk: 'Торт', en: 'Cake', be: 'Торт' }] },
+                { letter: 'У', words: [{ emoji: '🐍', uk: 'Удав', en: 'Boa', be: 'Удаў' }, { emoji: '🌪️', uk: 'Ураган', en: 'Hurricane', be: 'Ураган' }, { emoji: '🇺🇦', uk: 'Україна', en: 'Ukraine', be: 'Украіна' }] },
+                { letter: 'Ф', words: [{ emoji: '🦩', uk: 'Фламінго', en: 'Flamingo', be: 'Фламінга' }, { emoji: '🎨', uk: 'Фарби', en: 'Paints', be: 'Фарбы' }, { emoji: '⛲', uk: 'Фонтан', en: 'Fountain', be: 'Фантан' }] },
+                { letter: 'Х', words: [{ emoji: '🦎', uk: 'Хамелеон', en: 'Chameleon', be: 'Хамелеон' }, { emoji: '🍞', uk: 'Хліб', en: 'Bread', be: 'Хлеб' }, { emoji: '☁️', uk: 'Хмара', en: 'Cloud', be: 'Хмара' }] },
+                { letter: 'Ц', words: [{ emoji: '🍬', uk: 'Цукерка', en: 'Candy', be: 'Цукерка' }, { emoji: '🧅', uk: 'Цибуля', en: 'Onion', be: 'Цыбуля' }, { emoji: '📌', uk: 'Цвях', en: 'Nail', be: 'Цвік' }] },
+                { letter: 'Ч', words: [{ emoji: '🐢', uk: 'Черепаха', en: 'Turtle', be: 'Чарапаха' }, { emoji: '🫖', uk: 'Чайник', en: 'Teapot', be: 'Чайнік' }, { emoji: '⛵', uk: 'Човен', en: 'Boat', be: 'Човен' }] },
+                { letter: 'Ш', words: [{ emoji: '🧢', uk: 'Шапка', en: 'Hat', be: 'Шапка' }, { emoji: '🍫', uk: 'Шоколад', en: 'Chocolate', be: 'Шакалад' }, { emoji: '🧣', uk: 'Шарф', en: 'Scarf', be: 'Шарф' }] },
+                { letter: 'Щ', words: [{ emoji: '🐶', uk: 'Щеня', en: 'Puppy', be: 'Шчаня' }, { emoji: '🪥', uk: 'Щітка', en: 'Brush', be: 'Шчотка' }, { emoji: '🛡️', uk: 'Щит', en: 'Shield', be: 'Шчыт' }] },
+                { letter: 'Ь', words: [{ emoji: '🧂', uk: 'Сіль (літера Ь)', en: 'Salt', be: 'Соль' }, { emoji: '🦌', uk: 'Лось (літера Ь)', en: 'Elk', be: 'Лось' }, { emoji: '🪵', uk: 'Пень (літера Ь)', en: 'Stump', be: 'Пень' }] },
+                { letter: 'Ю', words: [{ emoji: '🍲', uk: 'Юшка', en: 'Soup', be: 'Юшка' }, { emoji: '⛺', uk: 'Юрта', en: 'Yurt', be: 'Юрта' }, { emoji: '🪐', uk: 'Юпітер', en: 'Jupiter', be: 'Юпітэр' }] },
+                { letter: 'Я', words: [{ emoji: '🍎', uk: 'Яблуко', en: 'Apple', be: 'Яблык' }, { emoji: '🦎', uk: 'Ящірка', en: 'Lizard', be: 'Яшчарка' }, { emoji: '⚓', uk: 'Якір', en: 'Anchor', be: 'Якар' }] }
             ],
             be: [
-                { letter: 'А', words: [{ emoji: '🍍', be: 'Ананас', uk: 'Ананас' }, { emoji: '🥒', be: 'Агурок', uk: 'Огірок' }, { emoji: '🚌', be: 'Аўтобус', uk: 'Автобус' }] },
-                { letter: 'Б', words: [{ emoji: '🍌', be: 'Банан', uk: 'Банан' }, { emoji: '🥔', be: 'Бульба', uk: 'Картопля' }, { emoji: '🥁', be: 'Барабан', uk: 'Барабан' }] },
-                { letter: 'В', words: [{ emoji: '🍇', be: 'Вінаград', uk: 'Виноград' }, { emoji: '🍒', be: 'Вішня', uk: 'Вишня' }, { emoji: '🚁', be: 'Верталёт', uk: 'Гелікоптер' }] },
-                { letter: 'К', words: [{ emoji: '🐱', be: 'Кот', uk: 'Кіт' }, { emoji: '🐮', be: 'Карова', uk: 'Корова' }, { emoji: '🍉', be: 'Кавун', uk: 'Кавун' }] },
-                { letter: 'М', words: [{ emoji: '🐵', be: 'Малпа', uk: 'Мавпа' }, { emoji: '🚗', be: 'Машына', uk: 'Машина' }, { emoji: '🧸', be: 'Мішка', uk: 'Ведмедик' }] }
+                { letter: 'А', words: [{ emoji: '🍍', be: 'Ананас', uk: 'Ананас', en: 'Pineapple' }, { emoji: '🥒', be: 'Агурок', uk: 'Огірок', en: 'Cucumber' }, { emoji: '🚌', be: 'Аўтобус', uk: 'Автобус', en: 'Bus' }] },
+                { letter: 'Б', words: [{ emoji: '🍌', be: 'Банан', uk: 'Банан', en: 'Banana' }, { emoji: '🥔', be: 'Бульба', uk: 'Картопля', en: 'Potato' }, { emoji: '🥁', be: 'Барабан', uk: 'Барабан', en: 'Drum' }] },
+                { letter: 'В', words: [{ emoji: '🍇', be: 'Вінаград', uk: 'Виноград', en: 'Grapes' }, { emoji: '🍒', be: 'Вішня', uk: 'Вишня', en: 'Cherry' }, { emoji: '🚁', be: 'Верталёт', uk: 'Гелікоптер', en: 'Helicopter' }] },
+                { letter: 'Г', words: [{ emoji: '🍄', be: 'Грыб', uk: 'Гриб', en: 'Mushroom' }, { emoji: '🍐', be: 'Груша', uk: 'Груша', en: 'Pear' }, { emoji: '🦆', be: 'Гусь', uk: 'Гусак', en: 'Goose' }] },
+                { letter: 'Д', words: [{ emoji: '🌳', be: 'Дрэва', uk: 'Дерево', en: 'Tree' }, { emoji: '🐉', be: 'Дракон', uk: 'Дракон', en: 'Dragon' }, { emoji: '🐬', be: 'Дэльфін', uk: 'Дельфін', en: 'Dolphin' }] },
+                { letter: 'Е', words: [{ emoji: '🦝', be: 'Енот', uk: 'Єнот', en: 'Raccoon' }, { emoji: '🎄', be: 'Елка', uk: 'Ялинка', en: 'Xmas tree' }, { emoji: '🍔', be: 'Ежа', uk: 'Їжа', en: 'Food' }] },
+                { letter: 'Ё', words: [{ emoji: '🐟', be: 'Ёрш', uk: 'Йорж', en: 'Ruff' }, { emoji: '🥛', be: 'Ёгурт', uk: 'Йогурт', en: 'Yogurt' }, { emoji: '🎄', be: 'Ёлка', uk: 'Ялинка', en: 'Fir tree' }] },
+                { letter: 'Ж', words: [{ emoji: '🐸', be: 'Жаба', uk: 'Жаба', en: 'Frog' }, { emoji: '🦒', be: 'Жырафа', uk: 'Жираф', en: 'Giraffe' }, { emoji: '🌰', be: 'Жалуды', uk: 'Жолуді', en: 'Acorns' }] },
+                { letter: 'З', words: [{ emoji: '🦓', be: 'Зебра', uk: 'Зебра', en: 'Zebra' }, { emoji: '🐰', be: 'Заяц', uk: 'Заєць', en: 'Hare' }, { emoji: '⭐', be: 'Зорка', uk: 'Зірка', en: 'Star' }] },
+                { letter: 'І', words: [{ emoji: '🦁', be: 'Ільвіца', uk: 'Левиця', en: 'Lioness' }, { emoji: '🦃', be: 'Індык', uk: 'Індик', en: 'Turkey' }, { emoji: '🪡', be: 'Іголка', uk: 'Голка', en: 'Needle' }] },
+                { letter: 'Й', words: [{ emoji: '🧪', be: 'Йод', uk: 'Йод', en: 'Iodine' }, { emoji: '🥛', be: 'Йогурт', uk: 'Йогурт', en: 'Yogurt' }, { emoji: '👕', be: 'Майка (літера Й)', uk: 'Футболка', en: 'T-shirt' }] },
+                { letter: 'К', words: [{ emoji: '🐱', be: 'Кот', uk: 'Кіт', en: 'Cat' }, { emoji: '🐮', be: 'Карова', uk: 'Корова', en: 'Cow' }, { emoji: '🍉', be: 'Кавун', uk: 'Кавун', en: 'Watermelon' }] },
+                { letter: 'Л', words: [{ emoji: '🦁', be: 'Леў', uk: 'Лев', en: 'Lion' }, { emoji: '🍋', be: 'Лімон', uk: 'Лимон', en: 'Lemon' }, { emoji: '🪆', be: 'Лялька', uk: 'Лялька', en: 'Doll' }] },
+                { letter: 'М', words: [{ emoji: '🐵', be: 'Малпа', uk: 'Мавпа', en: 'Monkey' }, { emoji: '🚗', be: 'Машына', uk: 'Машина', en: 'Car' }, { emoji: '🧸', be: 'Мішка', uk: 'Ведмедик', en: 'Teddy' }] },
+                { letter: 'Н', words: [{ emoji: '🦏', be: 'Насарог', uk: 'Носоріг', en: 'Rhino' }, { emoji: '✂️', be: 'Ножніцы', uk: 'Ножиці', en: 'Scissors' }, { emoji: '🧵', be: 'Нітка', uk: 'Нитка', en: 'Thread' }] },
+                { letter: 'О', words: [{ emoji: '🏅', be: 'Ордэн', uk: 'Орден', en: 'Order' }, { emoji: '🏢', be: 'Офіс', uk: 'Офіс', en: 'Office' }, { emoji: '👓', be: 'Оптыка', uk: 'Оптика', en: 'Optics' }] },
+                { letter: 'П', words: [{ emoji: '🐼', be: 'Панда', uk: 'Панда', en: 'Panda' }, { emoji: '🚂', be: 'Поезд', uk: 'Потяг', en: 'Train' }, { emoji: '🍅', be: 'Памідор', uk: 'Помідор', en: 'Tomato' }] },
+                { letter: 'Р', words: [{ emoji: '🚀', be: 'Ракета', uk: 'Ракета', en: 'Rocket' }, { emoji: '🐟', be: 'Рыба', uk: 'Риба', en: 'Fish' }, { emoji: '🤖', be: 'Робат', uk: 'Робот', en: 'Robot' }] },
+                { letter: 'С', words: [{ emoji: '🐘', be: 'Слон', uk: 'Слон', en: 'Elephant' }, { emoji: '🐶', be: 'Сабака', uk: 'Собака', en: 'Dog' }, { emoji: '☀️', be: 'Сонца', uk: 'Сонце', en: 'Sun' }] },
+                { letter: 'Т', words: [{ emoji: '🚜', be: 'Трактар', uk: 'Трактор', en: 'Tractor' }, { emoji: '🐯', be: 'Тыгр', uk: 'Тигр', en: 'Tiger' }, { emoji: '🎂', be: 'Торт', uk: 'Торт', en: 'Cake' }] },
+                { letter: 'У', words: [{ emoji: '🐌', be: 'Улітка', uk: 'Равлик', en: 'Snail' }, { emoji: '🐍', be: 'Удаў', uk: 'Удав', en: 'Boa' }, { emoji: '🏫', be: 'Урок', uk: 'Урок', en: 'Lesson' }] },
+                { letter: 'Ў', words: [{ emoji: '🚌', be: 'Аўтобус (літера Ў)', uk: 'Автобус', en: 'Bus' }, { emoji: '🐺', be: 'Воўк (літера Ў)', uk: 'Вовк', en: 'Wolf' }, { emoji: '🐮', be: 'Кароўка (літера Ў)', uk: 'Корівка', en: 'Cow' }] },
+                { letter: 'Ф', words: [{ emoji: '🦩', be: 'Фламінга', uk: 'Фламінго', en: 'Flamingo' }, { emoji: '🎨', be: 'Фарбы', uk: 'Фарби', en: 'Paints' }, { emoji: '⛲', be: 'Фантан', uk: 'Фонтан', en: 'Fountain' }] },
+                { letter: 'Х', words: [{ emoji: '🦎', be: 'Хамелеон', uk: 'Хамелеон', en: 'Chameleon' }, { emoji: '🍞', be: 'Хлеб', uk: 'Хліб', en: 'Bread' }, { emoji: '☁️', be: 'Хмара', uk: 'Хмара', en: 'Cloud' }] },
+                { letter: 'Ц', words: [{ emoji: '🍬', be: 'Цукерка', uk: 'Цукерка', en: 'Candy' }, { emoji: '🧅', be: 'Цыбуля', uk: 'Цибуля', en: 'Onion' }, { emoji: '📌', be: 'Цвік', uk: 'Цвях', en: 'Nail' }] },
+                { letter: 'Ч', words: [{ emoji: '🐢', be: 'Чарапаха', uk: 'Черепаха', en: 'Turtle' }, { emoji: '👞', be: 'Чаравікі', uk: 'Черевики', en: 'Shoes' }, { emoji: '🍵', be: 'Чай', uk: 'Чай', en: 'Tea' }] },
+                { letter: 'Ш', words: [{ emoji: '🧢', be: 'Шапка', uk: 'Шапка', en: 'Hat' }, { emoji: '🍫', be: 'Шакалад', uk: 'Шоколад', en: 'Chocolate' }, { emoji: '🧣', be: 'Шарф', uk: 'Шарф', en: 'Scarf' }] },
+                { letter: 'Ы', words: [{ emoji: '🐟', be: 'Рыба (літера Ы)', uk: 'Риба', en: 'Fish' }, { emoji: '🐭', be: 'Мыш (літера Ы)', uk: 'Миша', en: 'Mouse' }, { emoji: '🧀', be: 'Сыр (літера Ы)', uk: 'Сир', en: 'Cheese' }] },
+                { letter: 'Ь', words: [{ emoji: '🧂', be: 'Соль (літера Ь)', uk: 'Сіль', en: 'Salt' }, { emoji: '🦌', be: 'Лось (літера Ь)', uk: 'Лось', en: 'Elk' }, { emoji: '🪵', be: 'Пень (літера Ь)', en: 'Stump', be: 'Пень' }] },
+                { letter: 'Э', words: [{ emoji: '🚜', be: 'Экскаватар', uk: 'Екскаватор', en: 'Excavator' }, { emoji: '🧝', be: 'Эльф', uk: 'Ельф', en: 'Elf' }, { emoji: '📺', be: 'Экран', uk: 'Екран', en: 'Screen' }] },
+                { letter: 'Ю', words: [{ emoji: '🍲', be: 'Юшка', uk: 'Юшка', en: 'Soup' }, { emoji: '⛺', be: 'Юрта', uk: 'Юрта', en: 'Yurt' }, { emoji: '🪐', be: 'Юпітэр', uk: 'Юпітер', en: 'Jupiter' }] },
+                { letter: 'Я', words: [{ emoji: '🍎', be: 'Яблык', uk: 'Яблуко', en: 'Apple' }, { emoji: '🦎', be: 'Яшчарка', uk: 'Ящірка', en: 'Lizard' }, { emoji: '⚓', be: 'Якар', uk: 'Якір', en: 'Anchor' }] }
             ]
         };
 
@@ -266,14 +341,34 @@
                     }
                 }
             },
+            numbers: {
+                id: 'numbers', title: '🔢 Цифри', color: 'bg-rose-400 hover:bg-rose-500 text-rose-900 border-rose-300',
+                getItems: function(lang) {
+                    return [
+                        { emoji: '0', en: 'Zero', uk: 'Нуль', be: 'Нуль' },
+                        { emoji: '1', en: 'One', uk: 'Один', be: 'Адзін' },
+                        { emoji: '2', en: 'Two', uk: 'Два', be: 'Два' },
+                        { emoji: '3', en: 'Three', uk: 'Три', be: 'Тры' },
+                        { emoji: '4', en: 'Four', uk: 'Чотири', be: 'Чатыры' },
+                        { emoji: '5', en: 'Five', uk: "П'ять", be: 'Пяць' },
+                        { emoji: '6', en: 'Six', uk: 'Шість', be: 'Шэсць' },
+                        { emoji: '7', en: 'Seven', uk: 'Сім', be: 'Сем' },
+                        { emoji: '8', en: 'Eight', uk: 'Вісім', be: 'Восем' },
+                        { emoji: '9', en: 'Nine', uk: "Дев'ять", be: 'Дзевяць' },
+                        { emoji: '10', en: 'Ten', uk: 'Десять', be: 'Дзесяць' },
+                        { emoji: '11', en: 'Eleven', uk: 'Одинадцять', be: 'Адзінаццаць' },
+                        { emoji: '12', en: 'Twelve', uk: 'Дванадцять', be: 'Дванаццаць' }
+                    ];
+                }
+            },
             letters_words: {
                 id: 'letters_words', title: '🔤📖 Буква і слово', color: 'bg-teal-400 hover:bg-teal-500 text-teal-900 border-teal-300',
-                items: [] // Обробляється динамічно з lettersWordsData
+                items: [] // Оновлюється динамічно
             }
         };
 
         let currentCategory = 'animals';
-        let targetLanguage = 'en';
+        let targetLanguage = 'uk'; // За замовчуванням встановлюємо Українську мову!
         let availableVoices = [];
 
         function populateVoiceList() {
@@ -311,8 +406,22 @@
         function speakWord(item) {
             window.speechSynthesis.cancel();
             
-            // Запобігаємо тому, щоб TTS казав "Capital A" або "Велика літера О" - перетворюємо все в нижній регістр
-            const wordToSpeak = (item[targetLanguage] || '').toLowerCase();
+            // 1. Отримуємо слово для поточної обраної мови
+            let wordToSpeak = (item[targetLanguage] || '');
+            
+            // 2. Очищаємо текст у дужках типу "(літера И)", щоб TTS вимовляв лише чисте слово (наприклад, "Сир")
+            wordToSpeak = wordToSpeak.replace(/\s*\(.*?\)\s*/g, '').trim();
+            
+            // 3. Перетворюємо слово в нижній регістр (для літер це прибирає "Capital / Велика літера")
+            if (currentCategory === 'letters' || currentCategory === 'letters_words') {
+                wordToSpeak = wordToSpeak.toLowerCase();
+            }
+            
+            // 4. Трюк для літери "і", щоб TTS не вимовляв "літера і"
+            if (wordToSpeak === 'і' || wordToSpeak === 'i') {
+                wordToSpeak = 'і.';
+            }
+
             const utterance = new SpeechSynthesisUtterance(wordToSpeak);
             
             utterance.rate = 0.85; 
@@ -343,7 +452,7 @@
             wordElement.textContent = item[targetLanguage];
             wordElement.style.opacity = 1;
             
-            // Розумне відображення перекладу
+            // Розумне відображення перекладу під великим словом
             if (item.uk && targetLanguage !== 'uk') {
                 translationElement.textContent = targetLanguage === 'en' ? item.uk : item.en;
                 translationElement.style.opacity = 1;
@@ -392,7 +501,7 @@
 
             Object.values(gameData).forEach(cat => {
                 const btn = document.createElement('button');
-                btn.className = `${cat.color} rounded-3xl p-3 md:p-6 border-b-8 shadow-xl flex flex-col items-center justify-center gap-1 md:gap-3 transform hover:scale-105 active:scale-95 transition-transform`;
+                btn.className = `${cat.color} rounded-3xl p-3 md:p-5 border-b-8 shadow-xl flex flex-col items-center justify-center gap-1 md:gap-3 transform hover:scale-105 active:scale-95 transition-all`;
                 
                 const emoji = cat.title.split(' ')[0];
                 const text = cat.title.substring(2);
@@ -500,8 +609,9 @@
             let allItems = categoryData.getItems ? categoryData.getItems(targetLanguage) : categoryData.items;
 
             let displayItems = allItems;
+            const isPaginated = (currentCategory === 'letters' || currentCategory === 'numbers');
 
-            if (currentCategory === 'letters') {
+            if (isPaginated) {
                 const startIndex = currentLetterPage * ITEMS_PER_PAGE;
                 displayItems = allItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
                 
@@ -515,7 +625,7 @@
             }
 
             // Класи сітки
-            if (currentCategory === 'letters') {
+            if (isPaginated) {
                 gridContainer.className = "grid grid-cols-3 grid-rows-2 gap-3 md:gap-6 flex-1 min-h-0 w-full";
             } else {
                 gridContainer.className = "grid grid-cols-3 grid-rows-4 md:grid-cols-4 md:grid-rows-3 gap-2 md:gap-4 flex-1 min-h-0 w-full";
@@ -532,11 +642,13 @@
                 if(currentCategory === 'transport') borderColor = '#60a5fa';
                 if(currentCategory === 'clothes') borderColor = '#f472b6';
                 if(currentCategory === 'letters') borderColor = '#fdba74';
+                if(currentCategory === 'numbers') borderColor = '#fda4af'; // Ніжно-рожева рамочка для цифр
                 
                 card.style.borderColor = borderColor;
                 card.style.animation = `bounce-in 0.4s ease-out ${index * 0.05}s both`;
 
-                if (currentCategory === 'letters') {
+                if (isPaginated) {
+                    // Стиль "Просто Буква або Цифра"
                     card.innerHTML = `<span class="emoji-animate text-8xl sm:text-9xl font-black text-gray-800 drop-shadow-sm">${item.emoji}</span>`;
                 } else {
                     const translationText = targetLanguage === 'uk' ? item.en : item.uk;
@@ -575,7 +687,7 @@
 
         // Кнопки сторінок
         document.getElementById('prev-page-btn').onclick = () => {
-            if (currentCategory === 'letters') {
+            if (currentCategory === 'letters' || currentCategory === 'numbers') {
                 if (currentLetterPage > 0) {
                     currentLetterPage--;
                     renderGrid();
@@ -589,8 +701,8 @@
         };
 
         document.getElementById('next-page-btn').onclick = () => {
-            if (currentCategory === 'letters') {
-                const allItems = gameData.letters.getItems(targetLanguage);
+            if (currentCategory === 'letters' || currentCategory === 'numbers') {
+                const allItems = gameData[currentCategory].getItems(targetLanguage);
                 if (currentLetterPage < Math.ceil(allItems.length / ITEMS_PER_PAGE) - 1) {
                     currentLetterPage++;
                     renderGrid();
@@ -648,13 +760,13 @@
 
             // Керування стрілками
             if (isGameScreenActive) {
-                if (currentCategory === 'letters' || currentCategory === 'letters_words') {
+                if (currentCategory === 'letters' || currentCategory === 'numbers' || currentCategory === 'letters_words') {
                     if (e.key === 'ArrowLeft') document.getElementById('prev-page-btn').click();
                     if (e.key === 'ArrowRight') document.getElementById('next-page-btn').click();
                 }
             }
 
-            // Пошук літер та слів за абеткою на клавіатурі
+            // Пошук літер, цифр та слів за абеткою на клавіатурі
             if (isGameScreenActive && e.key.length === 1) {
                 const pressedChar = e.key.toLowerCase();
 
@@ -676,20 +788,20 @@
                         }
                     }
                 } else {
-                    let categoryData = currentCategory === 'letters' 
-                        ? gameData.letters.getItems(targetLanguage) 
+                    let categoryData = (currentCategory === 'letters' || currentCategory === 'numbers') 
+                        ? gameData[currentCategory].getItems(targetLanguage) 
                         : gameData[currentCategory].items;
 
                     let itemIndex = -1;
 
-                    if (currentCategory === 'letters') {
+                    if (currentCategory === 'letters' || currentCategory === 'numbers') {
                         itemIndex = categoryData.findIndex(item => item.emoji.toLowerCase() === pressedChar);
                     } else {
                         itemIndex = categoryData.findIndex(item => item[targetLanguage].toLowerCase().startsWith(pressedChar));
                     }
 
                     if (itemIndex !== -1) {
-                        if (currentCategory === 'letters') {
+                        if (currentCategory === 'letters' || currentCategory === 'numbers') {
                             const targetPage = Math.floor(itemIndex / ITEMS_PER_PAGE);
                             if (currentLetterPage !== targetPage) {
                                 currentLetterPage = targetPage;
@@ -698,7 +810,7 @@
                         }
 
                         const cards = document.querySelectorAll('#game-grid .card-pop');
-                        const cardIndexOnScreen = currentCategory === 'letters' ? itemIndex % ITEMS_PER_PAGE : itemIndex;
+                        const cardIndexOnScreen = (currentCategory === 'letters' || currentCategory === 'numbers') ? itemIndex % ITEMS_PER_PAGE : itemIndex;
                         const targetCard = cards[cardIndexOnScreen];
 
                         if (targetCard) {
