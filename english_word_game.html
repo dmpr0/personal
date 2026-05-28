@@ -12,7 +12,6 @@
             background-color: #f0fdf4;
             background-image: radial-gradient(#bbf7d0 2px, transparent 2px);
             background-size: 30px 30px;
-            /* Prevent text selection and scrolling to feel like an app */
             user-select: none; 
             -webkit-user-select: none;
             touch-action: manipulation;
@@ -59,7 +58,6 @@
 </head>
 <body class="h-[100dvh] w-screen overflow-hidden flex flex-col items-center">
 
-    <!-- Settings Modal -->
     <div id="settings-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border-4 border-green-400">
             <h2 class="text-2xl font-black text-green-600 mb-6 text-center">Налаштування</h2>
@@ -74,6 +72,7 @@
                     <label class="block text-gray-700 font-bold mb-2">🌍 Мова вивчення:</label>
                     <select id="language-select" class="w-full px-4 py-3 rounded-xl border-2 border-blue-200 bg-blue-50 text-gray-800 font-bold focus:outline-none focus:border-blue-500 shadow-inner appearance-none cursor-pointer">
                         <option value="en">🇬🇧 Англійська</option>
+                        <option value="uk">🇺🇦 Українська</option>
                         <option value="be">⚪🔴⚪ Білоруська</option>
                     </select>
                 </div>
@@ -92,9 +91,7 @@
         </div>
     </div>
 
-    <!-- 1. HOME SCREEN (Categories) -->
     <div id="home-screen" class="w-full h-full flex flex-col items-center justify-center p-4 relative max-w-5xl mx-auto">
-        <!-- Settings Button -->
         <button id="settings-btn" class="absolute top-4 right-4 md:top-6 md:right-6 bg-white p-3 rounded-full shadow-lg border-2 border-green-200 hover:bg-green-50 text-2xl transition-transform hover:scale-110 z-40">
             ⚙️
         </button>
@@ -108,10 +105,7 @@
         </main>
     </div>
 
-    <!-- 2. GAME SCREEN (Cards) -->
     <div id="game-screen" class="hidden w-full h-full flex flex-col p-3 md:p-6 max-w-6xl mx-auto relative">
-        
-        <!-- Header (Back Button & Word) -->
         <header class="relative flex items-center justify-between w-full h-16 md:h-20 shrink-0 mb-2 md:mb-4">
             <button id="back-btn" class="z-10 bg-white px-4 md:px-6 py-2 md:py-3 rounded-2xl shadow-md border-2 border-gray-200 font-black text-gray-600 hover:bg-gray-50 active:scale-95 transition-transform text-lg md:text-xl">
                 ⬅️ Назад
@@ -127,16 +121,66 @@
             </div>
         </header>
 
-        <!-- Grid Container (Takes up remaining height entirely) -->
-        <!-- 3 cols/4 rows for portrait, 4 cols/3 rows for landscape (iPad) -->
-        <main id="game-grid" class="grid grid-cols-3 grid-rows-4 md:grid-cols-4 md:grid-rows-3 gap-2 md:gap-4 flex-1 min-h-0 w-full">
+        <main id="game-grid" class="grid gap-2 md:gap-4 flex-1 min-h-0 w-full auto-rows-fr">
             <!-- Cards will be generated here -->
         </main>
         
+        <!-- NEW: Pagination Controls for Letters -->
+        <div id="pagination-controls" class="hidden flex items-center justify-between w-full h-16 shrink-0 mt-2">
+            <button id="prev-page-btn" class="bg-white px-6 py-3 rounded-2xl shadow-md border-2 border-gray-200 font-black text-gray-600 hover:bg-gray-50 active:scale-95 disabled:opacity-40 disabled:active:scale-100 transition-all text-2xl md:text-3xl">⬅️</button>
+            <div id="page-indicator" class="text-gray-500 font-black text-xl md:text-2xl">1 / 5</div>
+            <button id="next-page-btn" class="bg-white px-6 py-3 rounded-2xl shadow-md border-2 border-gray-200 font-black text-gray-600 hover:bg-gray-50 active:scale-95 disabled:opacity-40 disabled:active:scale-100 transition-all text-2xl md:text-3xl">➡️</button>
+        </div>
     </div>
 
     <script>
         const gameData = {
+            letters: {
+                id: 'letters', title: '🔤 Літери', color: 'bg-orange-400 hover:bg-orange-500 text-orange-900 border-orange-300',
+                getItems: function(lang) {
+                    if (lang === 'en') {
+                        return [
+                            { emoji: 'A', en: 'A', uk: 'Ей' }, { emoji: 'B', en: 'B', uk: 'Бі' }, { emoji: 'C', en: 'C', uk: 'Сі' },
+                            { emoji: 'D', en: 'D', uk: 'Ді' }, { emoji: 'E', en: 'E', uk: 'І' }, { emoji: 'F', en: 'F', uk: 'Еф' },
+                            { emoji: 'G', en: 'G', uk: 'Джі' }, { emoji: 'H', en: 'H', uk: 'Ейч' }, { emoji: 'I', en: 'I', uk: 'Ай' },
+                            { emoji: 'J', en: 'J', uk: 'Джей' }, { emoji: 'K', en: 'K', uk: 'Кей' }, { emoji: 'L', en: 'L', uk: 'Ел' },
+                            { emoji: 'M', en: 'M', uk: 'Ем' }, { emoji: 'N', en: 'N', uk: 'Ен' }, { emoji: 'O', en: 'O', uk: 'Оу' },
+                            { emoji: 'P', en: 'P', uk: 'Пі' }, { emoji: 'Q', en: 'Q', uk: 'Кью' }, { emoji: 'R', en: 'R', uk: 'Ар' },
+                            { emoji: 'S', en: 'S', uk: 'Ес' }, { emoji: 'T', en: 'T', uk: 'Ті' }, { emoji: 'U', en: 'U', uk: 'Ю' },
+                            { emoji: 'V', en: 'V', uk: 'Ві' }, { emoji: 'W', en: 'W', uk: 'Дабл-ю' }, { emoji: 'X', en: 'X', uk: 'Екс' },
+                            { emoji: 'Y', en: 'Y', uk: 'Вай' }, { emoji: 'Z', en: 'Z', uk: 'Зет' }
+                        ];
+                    } else if (lang === 'uk') {
+                        return [
+                            { emoji: 'А', uk: 'А', en: 'A' }, { emoji: 'Б', uk: 'Бе', en: 'B' }, { emoji: 'В', uk: 'Ве', en: 'V' },
+                            { emoji: 'Г', uk: 'Ге', en: 'H' }, { emoji: 'Ґ', uk: 'Ґе', en: 'G' }, { emoji: 'Д', uk: 'Де', en: 'D' },
+                            { emoji: 'Е', uk: 'Е', en: 'E' }, { emoji: 'Є', uk: 'Є', en: 'Ye' }, { emoji: 'Ж', uk: 'Же', en: 'Zh' },
+                            { emoji: 'З', uk: 'Зе', en: 'Z' }, { emoji: 'И', uk: 'И', en: 'Y' }, { emoji: 'І', uk: 'І', en: 'I' },
+                            { emoji: 'Ї', uk: 'Ї', en: 'Yi' }, { emoji: 'Й', uk: 'Йот', en: 'Yot' }, { emoji: 'К', uk: 'Ка', en: 'K' },
+                            { emoji: 'Л', uk: 'Ел', en: 'L' }, { emoji: 'М', uk: 'Ем', en: 'M' }, { emoji: 'Н', uk: 'Ен', en: 'N' },
+                            { emoji: 'О', uk: 'О', en: 'O' }, { emoji: 'П', uk: 'Пе', en: 'P' }, { emoji: 'Р', uk: 'Ер', en: 'R' },
+                            { emoji: 'С', uk: 'Ес', en: 'S' }, { emoji: 'Т', uk: 'Те', en: 'T' }, { emoji: 'У', uk: 'У', en: 'U' },
+                            { emoji: 'Ф', uk: 'Еф', en: 'F' }, { emoji: 'Х', uk: 'Ха', en: 'Kh' }, { emoji: 'Ц', uk: 'Це', en: 'Ts' },
+                            { emoji: 'Ч', uk: 'Че', en: 'Ch' }, { emoji: 'Ш', uk: 'Ша', en: 'Sh' }, { emoji: 'Щ', uk: 'Ща', en: 'Shch' },
+                            { emoji: 'Ь', uk: 'М\'який знак', en: 'Soft sign' }, { emoji: 'Ю', uk: 'Ю', en: 'Yu' }, { emoji: 'Я', uk: 'Я', en: 'Ya' }
+                        ];
+                    } else {
+                        return [
+                            { emoji: 'А', be: 'А', uk: 'А' }, { emoji: 'Б', be: 'Б', uk: 'Бе' }, { emoji: 'В', be: 'В', uk: 'Ве' },
+                            { emoji: 'Г', be: 'Г', uk: 'Ге' }, { emoji: 'Д', be: 'Д', uk: 'Де' }, { emoji: 'Е', be: 'Е', uk: 'Є' },
+                            { emoji: 'Ё', be: 'Ё', uk: 'Йо' }, { emoji: 'Ж', be: 'Ж', uk: 'Же' }, { emoji: 'З', be: 'З', uk: 'Зе' },
+                            { emoji: 'І', be: 'І', uk: 'І' }, { emoji: 'Й', be: 'Й', uk: 'Йот' }, { emoji: 'К', be: 'К', uk: 'Ка' },
+                            { emoji: 'Л', be: 'Л', uk: 'Ел' }, { emoji: 'М', be: 'М', uk: 'Ем' }, { emoji: 'Н', be: 'Н', uk: 'Ен' },
+                            { emoji: 'О', be: 'О', uk: 'О' }, { emoji: 'П', be: 'П', uk: 'Пе' }, { emoji: 'Р', be: 'Р', uk: 'Ер' },
+                            { emoji: 'С', be: 'С', uk: 'Ес' }, { emoji: 'Т', be: 'Т', uk: 'Те' }, { emoji: 'У', be: 'У', uk: 'У' },
+                            { emoji: 'Ў', be: 'Ў', uk: 'У-коротке' }, { emoji: 'Ф', be: 'Ф', uk: 'Еф' }, { emoji: 'Х', be: 'Х', uk: 'Ха' },
+                            { emoji: 'Ц', be: 'Ц', uk: 'Це' }, { emoji: 'Ч', be: 'Ч', uk: 'Че' }, { emoji: 'Ш', be: 'Ш', uk: 'Ша' },
+                            { emoji: 'Ы', be: 'Ы', uk: 'И' }, { emoji: 'Ь', be: 'Ь', uk: 'М\'який знак' }, { emoji: 'Э', be: 'Э', uk: 'Е' },
+                            { emoji: 'Ю', be: 'Ю', uk: 'Ю' }, { emoji: 'Я', be: 'Я', uk: 'Я' }
+                        ];
+                    }
+                }
+            },
             animals: {
                 id: 'animals', title: '🐶 Тварини', color: 'bg-yellow-400 hover:bg-yellow-500 text-yellow-900 border-yellow-300',
                 items: [
@@ -205,9 +249,11 @@
             }
         };
 
-        let currentCategory = 'animals';
+        let currentCategory = 'letters'; // Default to letters for testing
         let targetLanguage = 'en';
         let availableVoices = [];
+        let currentLetterPage = 0; 
+        const ITEMS_PER_PAGE = 6; 
 
         function populateVoiceList() {
             if (typeof speechSynthesis === 'undefined') return;
@@ -221,6 +267,10 @@
             if (targetLanguage === 'be') {
                 filteredVoices = availableVoices.filter(voice => 
                     voice.lang.startsWith('be') || voice.lang.startsWith('uk') || voice.lang.startsWith('ru')
+                );
+            } else if (targetLanguage === 'uk') {
+                filteredVoices = availableVoices.filter(voice => 
+                    voice.lang.startsWith('uk')
                 );
             } else {
                 filteredVoices = availableVoices.filter(voice => voice.lang.startsWith(targetLanguage));
@@ -244,8 +294,14 @@
         function speakWord(item) {
             window.speechSynthesis.cancel();
             
-            const word = item[targetLanguage];
-            const utterance = new SpeechSynthesisUtterance(word);
+            let textToSpeak = item[targetLanguage];
+            
+            // Fix for ALL letters so it says the letter instead of "Capital/Велика літера"
+            if (currentCategory === 'letters') {
+                textToSpeak = textToSpeak.toLowerCase(); 
+            }
+
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
             
             utterance.rate = 0.85; 
             utterance.pitch = 1.1;
@@ -258,7 +314,7 @@
                 utterance.voice = selectedVoice;
                 utterance.lang = selectedVoice.lang;
             } else {
-                utterance.lang = targetLanguage === 'en' ? 'en-US' : 'be-BY';
+                utterance.lang = targetLanguage === 'en' ? 'en-US' : (targetLanguage === 'uk' ? 'uk-UA' : 'be-BY');
             }
 
             window.speechSynthesis.speak(utterance);
@@ -270,6 +326,8 @@
             
             if (targetLanguage === 'en') {
                 wordElement.className = "text-3xl md:text-5xl font-black text-blue-500 transition-opacity duration-300 drop-shadow-sm mb-1 leading-none";
+            } else if (targetLanguage === 'uk') {
+                wordElement.className = "text-3xl md:text-5xl font-black text-yellow-500 transition-opacity duration-300 drop-shadow-sm mb-1 leading-none";
             } else {
                 wordElement.className = "text-3xl md:text-5xl font-black text-red-500 transition-opacity duration-300 drop-shadow-sm mb-1 leading-none";
             }
@@ -277,7 +335,9 @@
             wordElement.textContent = item[targetLanguage];
             wordElement.style.opacity = 1;
             
-            translationElement.textContent = item.uk;
+            // If learning Ukrainian, show English in brackets instead of Ukrainian
+            const secondaryText = targetLanguage === 'uk' ? item.en : item.uk;
+            translationElement.textContent = secondaryText;
             translationElement.style.opacity = 1;
 
             if (window.wordTimeout) clearTimeout(window.wordTimeout);
@@ -294,8 +354,16 @@
                 sparkle.className = 'sparkle-effect';
                 
                 const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left + (Math.random() * 40 - 20);
-                const y = e.clientY - rect.top + (Math.random() * 40 - 20);
+                let x, y;
+                
+                // Якщо є подія миші/дотику - іскри з'являються під пальцем, інакше (клавіатура) - по центру картки
+                if (e && e.clientX) {
+                    x = e.clientX - rect.left + (Math.random() * 40 - 20);
+                    y = e.clientY - rect.top + (Math.random() * 40 - 20);
+                } else {
+                    x = rect.width / 2 + (Math.random() * 40 - 20);
+                    y = rect.height / 2 + (Math.random() * 40 - 20);
+                }
                 
                 sparkle.style.left = `${x}px`;
                 sparkle.style.top = `${y}px`;
@@ -305,7 +373,6 @@
             }
         }
 
-        // Render Home Screen Categories
         function renderHomeCategories() {
             const grid = document.getElementById('category-grid');
             grid.innerHTML = '';
@@ -314,7 +381,6 @@
                 const btn = document.createElement('button');
                 btn.className = `${cat.color} rounded-3xl p-4 md:p-8 border-b-8 shadow-xl flex flex-col items-center justify-center gap-2 md:gap-4 transform hover:scale-105 active:scale-95 transition-transform`;
                 
-                // Extract emoji and text for beautiful display
                 const emoji = cat.title.split(' ')[0];
                 const text = cat.title.substring(2);
 
@@ -325,6 +391,7 @@
                 
                 btn.onclick = () => {
                     currentCategory = cat.id;
+                    currentLetterPage = 0; 
                     document.getElementById('home-screen').classList.add('hidden');
                     document.getElementById('game-screen').classList.remove('hidden');
                     document.getElementById('game-screen').classList.add('flex');
@@ -335,17 +402,40 @@
             });
         }
 
-        // Render Game Grid (Takes full height now)
         function renderGrid() {
             const gridContainer = document.getElementById('game-grid');
             gridContainer.innerHTML = '';
             
-            const items = gameData[currentCategory].items;
+            const categoryData = gameData[currentCategory];
+            const allItems = categoryData.getItems ? categoryData.getItems(targetLanguage) : categoryData.items;
 
-            items.forEach((item, index) => {
+            let itemsToRender = allItems;
+            let gridClass = "grid gap-2 md:gap-4 flex-1 min-h-0 w-full auto-rows-fr ";
+            
+            const paginationControls = document.getElementById('pagination-controls');
+
+            // Handle Pagination for letters
+            if (currentCategory === 'letters') {
+                const totalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
+                itemsToRender = allItems.slice(currentLetterPage * ITEMS_PER_PAGE, (currentLetterPage + 1) * ITEMS_PER_PAGE);
+                
+                // 2x3 or 3x2 grid for 6 large items
+                gridClass += "grid-cols-2 grid-rows-3 md:grid-cols-3 md:grid-rows-2";
+                
+                paginationControls.classList.remove('hidden');
+                document.getElementById('page-indicator').textContent = `${currentLetterPage + 1} / ${totalPages}`;
+                document.getElementById('prev-page-btn').disabled = currentLetterPage === 0;
+                document.getElementById('next-page-btn').disabled = currentLetterPage >= totalPages - 1;
+            } else {
+                gridClass += "grid-cols-3 grid-rows-4 md:grid-cols-4 md:grid-rows-3"; // 12 items standard
+                paginationControls.classList.add('hidden');
+            }
+            
+            gridContainer.className = gridClass;
+
+            itemsToRender.forEach((item, index) => {
                 const card = document.createElement('button');
-                // Removed aspect-square, added w-full h-full to stretch into grid cells
-                card.className = `card-pop w-full h-full relative overflow-hidden bg-white rounded-2xl md:rounded-3xl border-4 border-white shadow-md flex flex-col items-center justify-center p-1 md:p-2 group`;
+                card.className = `card-pop w-full h-full relative overflow-hidden bg-white rounded-2xl md:rounded-3xl border-4 border-white shadow-md flex flex-col items-center justify-center p-1 md:p-3 group`;
                 
                 let borderColor = '#fde047'; 
                 if(currentCategory === 'vegetables') borderColor = '#86efac';
@@ -353,18 +443,33 @@
                 if(currentCategory === 'toys') borderColor = '#c084fc';
                 if(currentCategory === 'transport') borderColor = '#60a5fa';
                 if(currentCategory === 'clothes') borderColor = '#f472b6';
+                if(currentCategory === 'letters') borderColor = '#fdba74';
                 
                 card.style.borderColor = borderColor;
-                card.style.animation = `bounce-in 0.4s ease-out ${index * 0.04}s both`;
+                card.style.animation = `bounce-in 0.4s ease-out ${index * 0.05}s both`;
 
-                card.innerHTML = `
-                    <div class="absolute inset-0 opacity-0 group-hover:opacity-5 bg-black transition-opacity"></div>
-                    <span class="emoji-animate text-5xl sm:text-6xl md:text-7xl mb-1">${item.emoji}</span>
-                    <div class="flex flex-col items-center leading-tight w-full px-1">
-                        <span class="text-base sm:text-lg md:text-xl font-black text-gray-800 capitalize truncate w-full text-center">${item[targetLanguage]}</span>
-                        <span class="text-xs sm:text-sm md:text-base font-bold text-gray-400">(${item.uk})</span>
-                    </div>
-                `;
+                // If learning Ukrainian, show English in brackets instead of Ukrainian
+                const secondaryText = targetLanguage === 'uk' ? item.en : item.uk;
+
+                if (currentCategory === 'letters') {
+                    // Huge letters since there are only 6 per page
+                    card.innerHTML = `
+                        <div class="absolute inset-0 opacity-0 group-hover:opacity-5 bg-black transition-opacity"></div>
+                        <span class="emoji-animate text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-gray-800">${item.emoji}</span>
+                        <div class="flex flex-col items-center leading-tight w-full px-1 mt-2">
+                            <span class="text-sm md:text-lg font-bold text-gray-400">(${secondaryText})</span>
+                        </div>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div class="absolute inset-0 opacity-0 group-hover:opacity-5 bg-black transition-opacity"></div>
+                        <span class="emoji-animate text-5xl sm:text-6xl md:text-7xl mb-1">${item.emoji}</span>
+                        <div class="flex flex-col items-center leading-tight w-full px-1">
+                            <span class="text-base sm:text-lg md:text-xl font-black text-gray-800 capitalize truncate w-full text-center">${item[targetLanguage]}</span>
+                            <span class="text-xs sm:text-sm md:text-base font-bold text-gray-400">(${secondaryText})</span>
+                        </div>
+                    `;
+                }
 
                 card.onclick = (e) => {
                     speakWord(item);
@@ -376,16 +481,32 @@
             });
         }
 
-        // Navigation logic
         document.getElementById('back-btn').onclick = () => {
             document.getElementById('game-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('flex');
             document.getElementById('home-screen').classList.remove('hidden');
             document.getElementById('home-screen').classList.add('flex');
             
-            // Clear floating text
             document.getElementById('current-word').style.opacity = 0;
             document.getElementById('current-translation').style.opacity = 0;
+        };
+
+        document.getElementById('prev-page-btn').onclick = () => {
+            if (currentLetterPage > 0) {
+                currentLetterPage--;
+                renderGrid();
+            }
+        };
+
+        document.getElementById('next-page-btn').onclick = () => {
+            const categoryData = gameData[currentCategory];
+            const allItems = categoryData.getItems ? categoryData.getItems(targetLanguage) : categoryData.items;
+            const totalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
+            
+            if (currentLetterPage < totalPages - 1) {
+                currentLetterPage++;
+                renderGrid();
+            }
         };
 
         window.onload = () => {
@@ -394,27 +515,108 @@
             
             renderHomeCategories();
 
-            // Settings Modal logic
             const modal = document.getElementById('settings-modal');
             document.getElementById('settings-btn').onclick = () => modal.classList.remove('hidden');
             document.getElementById('close-settings').onclick = () => modal.classList.add('hidden');
             
-            // Name change logic
             const nameInput = document.getElementById('child-name-input');
             const displayName = document.getElementById('display-name');
+            
+            // Виправлена помилка з дужкою:
             nameInput.addEventListener('input', (e) => {
                 displayName.textContent = e.target.value.trim() || 'Мія';
-            });
+            }); 
 
             // Language change logic
             document.getElementById('language-select').onchange = (e) => {
                 targetLanguage = e.target.value;
+                currentLetterPage = 0; 
                 populateVoiceList();
                 if (!document.getElementById('game-screen').classList.contains('hidden')) {
                     renderGrid(); 
                 }
             };
         };
+
+        // --- ДОДАНО: ПІДТРИМКА КЛАВІАТУРИ ---
+        document.addEventListener('keydown', (e) => {
+            // Ігноруємо натискання, якщо дитина щось вводить у текстове поле (наприклад, ім'я)
+            if (e.target.tagName === 'INPUT') return;
+
+            const isGameScreenActive = !document.getElementById('game-screen').classList.contains('hidden');
+            const isSettingsActive = !document.getElementById('settings-modal').classList.contains('hidden');
+
+            // 1. Кнопка Escape - вихід з гри або закриття налаштувань
+            if (e.key === 'Escape') {
+                if (isSettingsActive) {
+                    document.getElementById('close-settings').click();
+                } else if (isGameScreenActive) {
+                    document.getElementById('back-btn').click();
+                }
+                return;
+            }
+
+            // 2. Стрілки - гортання сторінок з літерами
+            if (isGameScreenActive && currentCategory === 'letters') {
+                if (e.key === 'ArrowLeft' && currentLetterPage > 0) {
+                    document.getElementById('prev-page-btn').click();
+                    return;
+                }
+                if (e.key === 'ArrowRight') {
+                    const allLetters = gameData.letters.getItems(targetLanguage);
+                    const totalPages = Math.ceil(allLetters.length / ITEMS_PER_PAGE);
+                    if (currentLetterPage < totalPages - 1) {
+                        document.getElementById('next-page-btn').click();
+                    }
+                    return;
+                }
+            }
+
+            // 3. Натискання букв (Магія пошуку)
+            if (isGameScreenActive && e.key.length === 1) {
+                const pressedChar = e.key.toLowerCase();
+                let categoryData = currentCategory === 'letters' 
+                    ? gameData.letters.getItems(targetLanguage) 
+                    : gameData[currentCategory].items;
+
+                let itemIndex = -1;
+
+                if (currentCategory === 'letters') {
+                    // Для літер: шукаємо точний збіг символу (враховуючи мову розкладки)
+                    itemIndex = categoryData.findIndex(item => item.emoji.toLowerCase() === pressedChar);
+                } else {
+                    // Для інших категорій: шукаємо перше слово, що починається на цю літеру
+                    itemIndex = categoryData.findIndex(item => item[targetLanguage].toLowerCase().startsWith(pressedChar));
+                }
+
+                if (itemIndex !== -1) {
+                    // Якщо ми в літерах, перевіряємо чи треба перегорнути сторінку
+                    if (currentCategory === 'letters') {
+                        const targetPage = Math.floor(itemIndex / ITEMS_PER_PAGE);
+                        if (currentLetterPage !== targetPage) {
+                            currentLetterPage = targetPage;
+                            renderGrid();
+                        }
+                    }
+
+                    // Знаходимо потрібну картку на екрані
+                    const cards = document.querySelectorAll('#game-grid .card-pop');
+                    const cardIndexOnScreen = currentCategory === 'letters' ? itemIndex % ITEMS_PER_PAGE : itemIndex;
+                    const targetCard = cards[cardIndexOnScreen];
+
+                    if (targetCard) {
+                        // Візуальна анімація "натискання" клавішею
+                        targetCard.style.transform = 'scale(0.9)';
+                        setTimeout(() => targetCard.style.transform = '', 150);
+
+                        const item = categoryData[itemIndex];
+                        speakWord(item);
+                        showWordText(item);
+                        createSparkles(null, targetCard); // null, оскільки немає координати миші
+                    }
+                }
+            }
+        });
     </script>
 </body>
 </html>
