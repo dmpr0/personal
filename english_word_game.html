@@ -19,13 +19,27 @@
         }
 
         .card-pop {
-            transition: transform 0.1s ease-in-out, background-color 0.1s ease-in-out;
+            transition: transform 0.15s ease-in-out, background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, border-color 0.15s ease-in-out;
         }
 
         /* Ефект спалаху при натисканні */
         .card-active-flash {
             transform: scale(0.92) !important;
             background-color: #fef08a !important; /* Яскравий жовтий спалах */
+        }
+
+        /* Ефект підсвітки картки під час автоматичного програвання по колу */
+        .loop-active-highlight {
+            border-color: #14b8a6 !important; /* teal-500 */
+            box-shadow: 0 0 25px rgba(20, 184, 166, 0.6) !important;
+            transform: scale(1.04);
+            background-color: #f0fdfa !important; /* Ніжно-бірюзовий фон */
+            animation: pulse-border 1.5s infinite alternate;
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 15px rgba(20, 184, 166, 0.4); }
+            100% { box-shadow: 0 0 30px rgba(20, 184, 166, 0.8); }
         }
 
         @keyframes bounce-in {
@@ -154,6 +168,11 @@
         const ITEMS_PER_PAGE = 6; // Для літер та цифр
         let currentLetterPage = 0;
         let currentLettersWordsIndex = 0; // Для розділу Літера та слова
+
+        // Стани для програвання по колу у розділі "Буква і слово"
+        let lettersWordsLoopActive = false;
+        let loopStep = 0; // 0: велика літера, 1: перше слово, 2: друге, 3: третє
+        let loopTimeout = null;
 
         // Повна база даних для розділу "Літери та слова" (усі літери абетки для кожної мови)
         const lettersWordsData = {
@@ -540,6 +559,110 @@
             }
         }
 
+        // --- ФУНКЦІЇ АВТОПРОГРАВАННЯ ПО КОЛУ (НОВЕ) ---
+        function stopLettersWordsLoop() {
+            lettersWordsLoopActive = false;
+            if (loopTimeout) {
+                clearTimeout(loopTimeout);
+                loopTimeout = null;
+            }
+            window.speechSynthesis.cancel();
+            
+            // Прибираємо підсвітку активного програвання з усіх карток
+            const giantCard = document.querySelector('.left-giant-card');
+            if (giantCard) giantCard.classList.remove('loop-active-highlight');
+            
+            const wordCards = document.querySelectorAll('#game-grid div.flex-col button');
+            wordCards.forEach(c => c.classList.remove('loop-active-highlight'));
+        }
+
+        function startLettersWordsLoop() {
+            stopLettersWordsLoop();
+            lettersWordsLoopActive = true;
+            loopStep = 0;
+            runLettersWordsLoopStep();
+        }
+
+        function runLettersWordsLoopStep() {
+            if (!lettersWordsLoopActive || currentCategory !== 'letters_words') return;
+
+            // Знімаємо попередню підсвітку
+            const giantCard = document.querySelector('.left-giant-card');
+            const wordCards = document.querySelectorAll('#game-grid div.flex-col button');
+
+            if (giantCard) giantCard.classList.remove('loop-active-highlight');
+            wordCards.forEach(c => c.classList.remove('loop-active-highlight'));
+
+            const langData = lettersWordsData[targetLanguage] || lettersWordsData['en'];
+            const currentItem = langData[currentLettersWordsIndex];
+            if (!currentItem) return;
+
+            let itemToSpeak = null;
+            let targetCard = null;
+
+            if (loopStep === 0) {
+                // Озвучуємо велику літеру ліворуч
+                itemToSpeak = { [targetLanguage]: currentItem.letter };
+                targetCard = giantCard;
+                showWordText({ [targetLanguage]: currentItem.letter, uk: 'Буква' });
+            } else {
+                // Озвучуємо одне з трьох слів праворуч (індекс: loopStep - 1)
+                const wordIdx = loopStep - 1;
+                itemToSpeak = currentItem.words[wordIdx];
+                targetCard = wordCards[wordIdx];
+                showWordText(itemToSpeak);
+            }
+
+            if (targetCard) {
+                targetCard.classList.add('loop-active-highlight');
+                createSparkles(null, targetCard);
+            }
+
+            // Озвучка
+            window.speechSynthesis.cancel();
+            let wordText = itemToSpeak[targetLanguage] || '';
+            wordText = wordText.replace(/\s*\(.*?\)\s*/g, '').trim();
+
+            if (loopStep === 0) {
+                wordText = wordText.toLowerCase();
+                if (wordText === 'і' || wordText === 'i') {
+                    wordText = 'і.';
+                }
+            }
+
+            const utterance = new SpeechSynthesisUtterance(wordText);
+            utterance.rate = 0.85;
+            utterance.pitch = 1.1;
+
+            const voiceSelect = document.getElementById('voice-select');
+            const selectedVoiceName = voiceSelect.value;
+            const selectedVoice = availableVoices.find(voice => voice.name === selectedVoiceName);
+            
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+                utterance.lang = selectedVoice.lang;
+            } else {
+                if (targetLanguage === 'en') utterance.lang = 'en-US';
+                else if (targetLanguage === 'uk') utterance.lang = 'uk-UA';
+                else utterance.lang = 'be-BY';
+            }
+
+            // Перехід до наступного елемента після завершення озвучення
+            utterance.onend = () => {
+                if (!lettersWordsLoopActive) return;
+                loopStep = (loopStep + 1) % 4; // Цикл 0 -> 1 -> 2 -> 3 -> 0
+                loopTimeout = setTimeout(runLettersWordsLoopStep, 1000); // Невелика пауза в 1с перед наступним словом
+            };
+
+            utterance.onerror = () => {
+                if (!lettersWordsLoopActive) return;
+                loopStep = (loopStep + 1) % 4;
+                loopTimeout = setTimeout(runLettersWordsLoopStep, 1000);
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
         function renderHomeCategories() {
             const grid = document.getElementById('category-grid');
             grid.innerHTML = '';
@@ -557,6 +680,7 @@
                 `;
                 
                 btn.onclick = () => {
+                    stopLettersWordsLoop(); // Завжди зупиняємо цикл при зміні гри
                     currentCategory = cat.id;
                     currentLetterPage = 0; 
                     currentLettersWordsIndex = 0;
@@ -584,7 +708,7 @@
             document.getElementById('prev-page-btn').style.opacity = currentLettersWordsIndex === 0 ? '0.3' : '1';
             document.getElementById('next-page-btn').style.opacity = currentLettersWordsIndex >= langData.length - 1 ? '0.3' : '1';
 
-            // Основна сітка: Ліва велика літера і три картки справа
+            // Основна сітка: Ліва велика література і три картки справа
             gridContainer.className = "grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0 w-full";
 
             // Ліва частина - Велика літера
@@ -594,13 +718,19 @@
                 <span class="text-9xl md:text-[12rem] font-black text-teal-500 drop-shadow-md">${currentItem.letter}</span>
                 <span class="text-lg md:text-2xl font-bold text-gray-400 mt-2">Натисни букву</span>
             `;
+            
+            // Натискання великої літери вмикає/вимикає автопрогравання по колу!
             leftCard.onclick = (e) => {
-                leftCard.classList.add('card-active-flash');
-                setTimeout(() => leftCard.classList.remove('card-active-flash'), 150);
-
-                speakWord({ [targetLanguage]: currentItem.letter });
-                showWordText({ [targetLanguage]: currentItem.letter, uk: 'Буква' });
-                createSparkles(e, leftCard);
+                if (lettersWordsLoopActive) {
+                    stopLettersWordsLoop();
+                    leftCard.classList.add('card-active-flash');
+                    setTimeout(() => leftCard.classList.remove('card-active-flash'), 150);
+                    speakWord({ [targetLanguage]: currentItem.letter });
+                    showWordText({ [targetLanguage]: currentItem.letter, uk: 'Буква' });
+                    createSparkles(e, leftCard);
+                } else {
+                    startLettersWordsLoop();
+                }
             };
 
             // Права частина - Три картки зі словами в стовпчик
@@ -624,7 +754,9 @@
                     </div>
                 `;
 
+                // Клік по окремому слову вимикає автопрогравання по колу і просто озвучує це одне слово
                 wordCard.onclick = (e) => {
+                    stopLettersWordsLoop();
                     wordCard.classList.add('card-active-flash');
                     setTimeout(() => wordCard.classList.remove('card-active-flash'), 150);
 
@@ -996,6 +1128,7 @@
 
         // Керування навігацією
         document.getElementById('back-btn').onclick = () => {
+            stopLettersWordsLoop(); // Зупиняємо цикл
             document.getElementById('game-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('flex');
             document.getElementById('home-screen').classList.remove('hidden');
@@ -1006,6 +1139,7 @@
 
         // Кнопки сторінок
         document.getElementById('prev-page-btn').onclick = () => {
+            stopLettersWordsLoop(); // Зупиняємо цикл при гортанні сторінки
             if (currentCategory === 'letters' || currentCategory === 'numbers') {
                 if (currentLetterPage > 0) {
                     currentLetterPage--;
@@ -1020,6 +1154,7 @@
         };
 
         document.getElementById('next-page-btn').onclick = () => {
+            stopLettersWordsLoop(); // Зупиняємо цикл при гортанні сторінки
             if (currentCategory === 'letters' || currentCategory === 'numbers') {
                 const allItems = gameData[currentCategory].getItems(targetLanguage);
                 if (currentLetterPage < Math.ceil(allItems.length / ITEMS_PER_PAGE) - 1) {
@@ -1054,6 +1189,7 @@
 
             // Language change logic
             document.getElementById('language-select').onchange = (e) => {
+                stopLettersWordsLoop(); // Зупиняємо цикл
                 targetLanguage = e.target.value;
                 currentLetterPage = 0; 
                 currentLettersWordsIndex = 0;
@@ -1072,6 +1208,7 @@
             const isSettingsActive = !document.getElementById('settings-modal').classList.contains('hidden');
 
             if (e.key === 'Escape') {
+                stopLettersWordsLoop();
                 if (isSettingsActive) document.getElementById('close-settings').click();
                 else if (isGameScreenActive) document.getElementById('back-btn').click();
                 return;
@@ -1095,16 +1232,10 @@
                     
                     if (itemIndex !== -1) {
                         currentLettersWordsIndex = itemIndex;
-                        renderGrid();
-
-                        const leftCard = document.querySelector('#game-grid .left-giant-card');
-                        if (leftCard) {
-                            leftCard.classList.add('card-active-flash');
-                            setTimeout(() => leftCard.classList.remove('card-active-flash'), 150);
-                            speakWord({ [targetLanguage]: langData[itemIndex].letter });
-                            showWordText({ [targetLanguage]: langData[itemIndex].letter, uk: 'Буква' });
-                            createSparkles(null, leftCard);
-                        }
+                        renderGrid(); // Оновимо екран для нової літери
+                        
+                        // Автоматично запускаємо відтворення ПО КОЛУ для цієї літери!
+                        startLettersWordsLoop();
                     }
                 } else {
                     let categoryData = (currentCategory === 'letters' || currentCategory === 'numbers') 
