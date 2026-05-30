@@ -28,7 +28,7 @@
             background-color: #fef08a !important; /* Яскравий жовтий спалах */
         }
 
-        /* Ефект підсвітки картки під час автоматичного програвання по колу */
+        /* Ефект підсвітки картки під час активного кроку озвучення */
         .loop-active-highlight {
             border-color: #14b8a6 !important; /* teal-500 */
             box-shadow: 0 0 25px rgba(20, 184, 166, 0.6) !important;
@@ -168,11 +168,7 @@
         const ITEMS_PER_PAGE = 6; // Для літер та цифр
         let currentLetterPage = 0;
         let currentLettersWordsIndex = 0; // Для розділу Літера та слова
-
-        // Стани для програвання по колу у розділі "Буква і слово"
-        let lettersWordsLoopActive = false;
-        let loopStep = 0; // 0: велика літера, 1: перше слово, 2: друге, 3: третє
-        let loopTimeout = null;
+        let currentWordStep = 0; // Наступне слово для озвучення (0, 1 або 2)
 
         // Повна база даних для розділу "Літери та слова" (усі літери абетки для кожної мови)
         const lettersWordsData = {
@@ -321,7 +317,7 @@
                 ]
             },
             transport: {
-                id: 'transport', title: '🚗 Транспорт', color: 'bg-blue-400 hover:bg-blue-500 text-blue-900 border-blue-300',
+                id: 'transport', title: '🚗 Траспорт', color: 'bg-blue-400 hover:bg-blue-500 text-blue-900 border-blue-300',
                 items: [
                     { emoji: '🚗', en: 'Car', be: 'Машына', uk: 'Машина' }, { emoji: '🚌', en: 'Bus', be: 'Аўтобус', uk: 'Автобус' },
                     { emoji: '✈️', en: 'Plane', be: 'Самалёт', uk: 'Літак' }, { emoji: '⛵', en: 'Boat', be: 'Лодка', uk: 'Човен' },
@@ -559,108 +555,44 @@
             }
         }
 
-        // --- ФУНКЦІЇ АВТОПРОГРАВАННЯ ПО КОЛУ (НОВЕ) ---
-        function stopLettersWordsLoop() {
-            lettersWordsLoopActive = false;
-            if (loopTimeout) {
-                clearTimeout(loopTimeout);
-                loopTimeout = null;
-            }
-            window.speechSynthesis.cancel();
-            
-            // Прибираємо підсвітку активного програвання з усіх карток
-            const giantCard = document.querySelector('.left-giant-card');
-            if (giantCard) giantCard.classList.remove('loop-active-highlight');
-            
-            const wordCards = document.querySelectorAll('#game-grid div.flex-col button');
-            wordCards.forEach(c => c.classList.remove('loop-active-highlight'));
-        }
-
-        function startLettersWordsLoop() {
-            stopLettersWordsLoop();
-            lettersWordsLoopActive = true;
-            loopStep = 0;
-            runLettersWordsLoopStep();
-        }
-
-        function runLettersWordsLoopStep() {
-            if (!lettersWordsLoopActive || currentCategory !== 'letters_words') return;
-
-            // Знімаємо попередню підсвітку
-            const giantCard = document.querySelector('.left-giant-card');
-            const wordCards = document.querySelectorAll('#game-grid div.flex-col button');
-
-            if (giantCard) giantCard.classList.remove('loop-active-highlight');
-            wordCards.forEach(c => c.classList.remove('loop-active-highlight'));
-
+        // --- ІНТЕРАКТИВНЕ ПРОГРАВАННЯ КРОК ЗА КРОКОМ (ПО КОЛУ) ---
+        function triggerLettersWordsNextStep(e) {
             const langData = lettersWordsData[targetLanguage] || lettersWordsData['en'];
             const currentItem = langData[currentLettersWordsIndex];
             if (!currentItem) return;
 
-            let itemToSpeak = null;
-            let targetCard = null;
+            // Отримуємо слово відповідно до поточного обраного кроку (0, 1 або 2)
+            const wordObj = currentItem.words[currentWordStep];
+            if (!wordObj) return;
 
-            if (loopStep === 0) {
-                // Озвучуємо велику літеру ліворуч
-                itemToSpeak = { [targetLanguage]: currentItem.letter };
-                targetCard = giantCard;
-                showWordText({ [targetLanguage]: currentItem.letter, uk: 'Буква' });
-            } else {
-                // Озвучуємо одне з трьох слів праворуч (індекс: loopStep - 1)
-                const wordIdx = loopStep - 1;
-                itemToSpeak = currentItem.words[wordIdx];
-                targetCard = wordCards[wordIdx];
-                showWordText(itemToSpeak);
-            }
+            // Скидаємо підсвітку з усіх карт слів
+            const wordCards = document.querySelectorAll('#game-grid div.flex-col button');
+            wordCards.forEach(c => c.classList.remove('loop-active-highlight'));
 
+            // Додаємо красиву бірюзову підсвітку на активне слово
+            const targetCard = wordCards[currentWordStep];
             if (targetCard) {
                 targetCard.classList.add('loop-active-highlight');
-                createSparkles(null, targetCard);
+                // Прибираємо її через деякий час, щоб вона залишалася сяючою кнопкою
+                setTimeout(() => {
+                    targetCard.classList.remove('loop-active-highlight');
+                }, 1500);
             }
 
-            // Озвучка
-            window.speechSynthesis.cancel();
-            let wordText = itemToSpeak[targetLanguage] || '';
-            wordText = wordText.replace(/\s*\(.*?\)\s*/g, '').trim();
-
-            if (loopStep === 0) {
-                wordText = wordText.toLowerCase();
-                if (wordText === 'і' || wordText === 'i') {
-                    wordText = 'і.';
-                }
+            // Також візуально злегка пульсуємо велику літеру
+            const giantCard = document.querySelector('.left-giant-card');
+            if (giantCard) {
+                giantCard.classList.add('card-active-flash');
+                setTimeout(() => giantCard.classList.remove('card-active-flash'), 150);
             }
 
-            const utterance = new SpeechSynthesisUtterance(wordText);
-            utterance.rate = 0.85;
-            utterance.pitch = 1.1;
+            // Озвучуємо та малюємо текст
+            speakWord(wordObj);
+            showWordText(wordObj);
+            createSparkles(e, targetCard || giantCard);
 
-            const voiceSelect = document.getElementById('voice-select');
-            const selectedVoiceName = voiceSelect.value;
-            const selectedVoice = availableVoices.find(voice => voice.name === selectedVoiceName);
-            
-            if (selectedVoice) {
-                utterance.voice = selectedVoice;
-                utterance.lang = selectedVoice.lang;
-            } else {
-                if (targetLanguage === 'en') utterance.lang = 'en-US';
-                else if (targetLanguage === 'uk') utterance.lang = 'uk-UA';
-                else utterance.lang = 'be-BY';
-            }
-
-            // Перехід до наступного елемента після завершення озвучення
-            utterance.onend = () => {
-                if (!lettersWordsLoopActive) return;
-                loopStep = (loopStep + 1) % 4; // Цикл 0 -> 1 -> 2 -> 3 -> 0
-                loopTimeout = setTimeout(runLettersWordsLoopStep, 1000); // Невелика пауза в 1с перед наступним словом
-            };
-
-            utterance.onerror = () => {
-                if (!lettersWordsLoopActive) return;
-                loopStep = (loopStep + 1) % 4;
-                loopTimeout = setTimeout(runLettersWordsLoopStep, 1000);
-            };
-
-            window.speechSynthesis.speak(utterance);
+            // Перемикаємося на наступне слово по колу (0 -> 1 -> 2 -> 0)
+            currentWordStep = (currentWordStep + 1) % 3;
         }
 
         function renderHomeCategories() {
@@ -680,10 +612,10 @@
                 `;
                 
                 btn.onclick = () => {
-                    stopLettersWordsLoop(); // Завжди зупиняємо цикл при зміні гри
                     currentCategory = cat.id;
                     currentLetterPage = 0; 
                     currentLettersWordsIndex = 0;
+                    currentWordStep = 0; // Скидаємо крок на перше слово
                     document.getElementById('home-screen').classList.add('hidden');
                     document.getElementById('game-screen').classList.remove('hidden');
                     document.getElementById('game-screen').classList.add('flex');
@@ -708,7 +640,7 @@
             document.getElementById('prev-page-btn').style.opacity = currentLettersWordsIndex === 0 ? '0.3' : '1';
             document.getElementById('next-page-btn').style.opacity = currentLettersWordsIndex >= langData.length - 1 ? '0.3' : '1';
 
-            // Основна сітка: Ліва велика література і три картки справа
+            // Основна сітка: Ліва велика літера і три картки справа
             gridContainer.className = "grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0 w-full";
 
             // Ліва частина - Велика літера
@@ -716,21 +648,12 @@
             leftCard.className = "card-pop left-giant-card w-full h-full relative overflow-hidden bg-white rounded-3xl border-8 border-teal-400 shadow-lg flex flex-col items-center justify-center p-6";
             leftCard.innerHTML = `
                 <span class="text-9xl md:text-[12rem] font-black text-teal-500 drop-shadow-md">${currentItem.letter}</span>
-                <span class="text-lg md:text-2xl font-bold text-gray-400 mt-2">Натисни букву</span>
+                <span class="text-lg md:text-2xl font-bold text-gray-400 mt-2">Натисни мене!</span>
             `;
             
-            // Натискання великої літери вмикає/вимикає автопрогравання по колу!
+            // Натискання великої літери вмикає покрокове програвання!
             leftCard.onclick = (e) => {
-                if (lettersWordsLoopActive) {
-                    stopLettersWordsLoop();
-                    leftCard.classList.add('card-active-flash');
-                    setTimeout(() => leftCard.classList.remove('card-active-flash'), 150);
-                    speakWord({ [targetLanguage]: currentItem.letter });
-                    showWordText({ [targetLanguage]: currentItem.letter, uk: 'Буква' });
-                    createSparkles(e, leftCard);
-                } else {
-                    startLettersWordsLoop();
-                }
+                triggerLettersWordsNextStep(e);
             };
 
             // Права частина - Три картки зі словами в стовпчик
@@ -754,15 +677,17 @@
                     </div>
                 `;
 
-                // Клік по окремому слову вимикає автопрогравання по колу і просто озвучує це одне слово
+                // Клік по окремому слову програє це слово і плавно переводить крок на НАСТУПНЕ за ним
                 wordCard.onclick = (e) => {
-                    stopLettersWordsLoop();
                     wordCard.classList.add('card-active-flash');
                     setTimeout(() => wordCard.classList.remove('card-active-flash'), 150);
 
                     speakWord(wordObj);
                     showWordText(wordObj);
                     createSparkles(e, wordCard);
+
+                    // Синхронізуємо крок, щоб наступне натискання на літеру грало наступне слово
+                    currentWordStep = (idx + 1) % 3;
                 };
 
                 rightContainer.appendChild(wordCard);
@@ -1128,7 +1053,6 @@
 
         // Керування навігацією
         document.getElementById('back-btn').onclick = () => {
-            stopLettersWordsLoop(); // Зупиняємо цикл
             document.getElementById('game-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('flex');
             document.getElementById('home-screen').classList.remove('hidden');
@@ -1139,7 +1063,6 @@
 
         // Кнопки сторінок
         document.getElementById('prev-page-btn').onclick = () => {
-            stopLettersWordsLoop(); // Зупиняємо цикл при гортанні сторінки
             if (currentCategory === 'letters' || currentCategory === 'numbers') {
                 if (currentLetterPage > 0) {
                     currentLetterPage--;
@@ -1148,13 +1071,13 @@
             } else if (currentCategory === 'letters_words') {
                 if (currentLettersWordsIndex > 0) {
                     currentLettersWordsIndex--;
+                    currentWordStep = 0; // Скидаємо крок на перше слово
                     renderGrid();
                 }
             }
         };
 
         document.getElementById('next-page-btn').onclick = () => {
-            stopLettersWordsLoop(); // Зупиняємо цикл при гортанні сторінки
             if (currentCategory === 'letters' || currentCategory === 'numbers') {
                 const allItems = gameData[currentCategory].getItems(targetLanguage);
                 if (currentLetterPage < Math.ceil(allItems.length / ITEMS_PER_PAGE) - 1) {
@@ -1165,6 +1088,7 @@
                 const langData = lettersWordsData[targetLanguage] || lettersWordsData['en'];
                 if (currentLettersWordsIndex < langData.length - 1) {
                     currentLettersWordsIndex++;
+                    currentWordStep = 0; // Скидаємо крок на перше слово
                     renderGrid();
                 }
             }
@@ -1189,10 +1113,10 @@
 
             // Language change logic
             document.getElementById('language-select').onchange = (e) => {
-                stopLettersWordsLoop(); // Зупиняємо цикл
                 targetLanguage = e.target.value;
                 currentLetterPage = 0; 
                 currentLettersWordsIndex = 0;
+                currentWordStep = 0; // Скидаємо крок на перше слово
                 populateVoiceList();
                 if (!document.getElementById('game-screen').classList.contains('hidden')) {
                     renderGrid(); 
@@ -1208,7 +1132,6 @@
             const isSettingsActive = !document.getElementById('settings-modal').classList.contains('hidden');
 
             if (e.key === 'Escape') {
-                stopLettersWordsLoop();
                 if (isSettingsActive) document.getElementById('close-settings').click();
                 else if (isGameScreenActive) document.getElementById('back-btn').click();
                 return;
@@ -1228,14 +1151,20 @@
 
                 if (currentCategory === 'letters_words') {
                     const langData = lettersWordsData[targetLanguage] || lettersWordsData['en'];
-                    const itemIndex = langData.findIndex(item => item.letter.toLowerCase() === pressedChar);
-                    
-                    if (itemIndex !== -1) {
-                        currentLettersWordsIndex = itemIndex;
-                        renderGrid(); // Оновимо екран для нової літери
-                        
-                        // Автоматично запускаємо відтворення ПО КОЛУ для цієї літери!
-                        startLettersWordsLoop();
+                    const activeLetterObj = langData[currentLettersWordsIndex];
+
+                    // Якщо клавіша співпадає з поточною літерою — граємо наступне по порядку слово!
+                    if (activeLetterObj && activeLetterObj.letter.toLowerCase() === pressedChar) {
+                        triggerLettersWordsNextStep(null);
+                    } else {
+                        // Якщо це нова літера, то перемикаємося на неї і відразу граємо ПЕРШЕ слово
+                        const itemIndex = langData.findIndex(item => item.letter.toLowerCase() === pressedChar);
+                        if (itemIndex !== -1) {
+                            currentLettersWordsIndex = itemIndex;
+                            currentWordStep = 0; // Починаємо з першого слова
+                            renderGrid(); // Перемальовуємо екран
+                            triggerLettersWordsNextStep(null); // Програємо
+                        }
                     }
                 } else {
                     let categoryData = (currentCategory === 'letters' || currentCategory === 'numbers') 
